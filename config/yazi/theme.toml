@@ -1,0 +1,191 @@
+# -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+# YAZI THEME - dark-fantasy (yazi 26.1).
+#
+# File manager behind the Satchel tile and SUPER+W. Palette from the README:
+#     background #0b0b0c   surface #151311   surface alt. #201c18
+#     text       #d7d0c5   muted   #81786b   gold         #b19a67
+#     ember      #8f4935   iron    #55504a
+#
+# Two derived colors, both computed from the palette, not made up:
+#     #2c281e  gold at 20 % over the background - the "outline" from Waybar and
+#              Theme.border, used here for the vertical lines between columns
+#     #5c5037  gold at 45 % over the background - the "dimmed gold" of the
+#              selection; full gold under white text would be unreadable
+#
+# NO RAINBOW. The stock theme paints images yellow, archives red,
+# and has several hundred brand-palette colors for icons. Yazi merges the user
+# theme with the stock one by "deserializing on top" - a list given here
+# (rules, dirs, files, exts, globs, conds) REPLACES the stock one rather than
+# being appended to it (yazi-config/src/theme/icon.rs, filetype.rs).
+# Thanks to that, short lists are enough to make the rainbow disappear entirely.
+#
+# Ember only where it means alarm: an operation error and a broken link.
+# -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+"$schema" = "https://yazi-rs.github.io/schemas/theme.json"
+
+# ----- MANAGER -----
+[mgr]
+cwd = { fg = "#b19a67" }
+
+find_keyword  = { fg = "#b19a67", bold = true, underline = true }
+find_position = { fg = "#81786b", italic = true }
+
+symlink_target = { fg = "#81786b", italic = true }
+
+# Markers at the edge of the list. Selected and marked - gold, copied -
+# muted text, cut - iron. Cutting announces a move,
+# not an alarm, so no ember.
+marker_copied   = { fg = "#81786b", bg = "#81786b" }
+marker_cut      = { fg = "#55504a", bg = "#55504a" }
+marker_marked   = { fg = "#b19a67", bg = "#b19a67" }
+marker_selected = { fg = "#b19a67", bg = "#b19a67" }
+
+count_copied   = { fg = "#0b0b0c", bg = "#81786b" }
+count_cut      = { fg = "#d7d0c5", bg = "#55504a" }
+count_selected = { fg = "#0b0b0c", bg = "#b19a67" }
+
+# Columns are separated by a single vertical line in the outline color - like
+# the frames of the bar and the shell.
+border_symbol = "│"
+border_style  = { fg = "#2c281e" }
+
+# ----- TABS -----
+[tabs]
+active   = { fg = "#0b0b0c", bg = "#b19a67", bold = true }
+inactive = { fg = "#81786b", bg = "#151311" }
+
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+# ----- MODE (left corner of the status bar) -----
+[mode]
+normal_main = { fg = "#0b0b0c", bg = "#b19a67", bold = true }
+normal_alt  = { fg = "#b19a67", bg = "#201c18" }
+
+select_main = { fg = "#0b0b0c", bg = "#81786b", bold = true }
+select_alt  = { fg = "#81786b", bg = "#201c18" }
+
+unset_main = { fg = "#d7d0c5", bg = "#55504a", bold = true }
+unset_alt  = { fg = "#55504a", bg = "#201c18" }
+
+# ----- SELECTED FILE -----
+# Dimmed gold under the text - stronger in the current column, weaker in the
+# parent (there the selection only says where we came from).
+[indicator]
+parent  = { fg = "#d7d0c5", bg = "#2c281e" }
+current = { fg = "#d7d0c5", bg = "#5c5037" }
+preview = { underline = true }
+padding = { open = "", close = "" }
+
+# ----- STATUS BAR -----
+# Background #151311 - surface, like the GTK window headers in gtk.css. Permissions
+# without per-kind colors: type in gold, the rest muted.
+[status]
+overall   = { fg = "#81786b", bg = "#151311" }
+sep_left  = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+
+perm_sep   = { fg = "#55504a" }
+perm_type  = { fg = "#b19a67" }
+perm_read  = { fg = "#81786b" }
+perm_write = { fg = "#81786b" }
+perm_exec  = { fg = "#81786b" }
+
+progress_label  = { fg = "#d7d0c5", bold = true }
+progress_normal = { fg = "#b19a67", bg = "#201c18" }
+progress_error  = { fg = "#8f4935", bg = "#201c18" }
+
+# ----- KEY HINTS -----
+[which]
+cols            = 3
+mask            = { bg = "#0b0b0c" }
+cand            = { fg = "#b19a67" }
+rest            = { fg = "#55504a" }
+desc            = { fg = "#81786b" }
+separator       = "  "
+separator_style = { fg = "#55504a" }
+
+# ----- POPUPS: confirmation, preview, picker, text input -----
+# Frames in dimmed gold - the #2c281e outline would get lost on the popup background.
+[confirm]
+border     = { fg = "#5c5037" }
+title      = { fg = "#b19a67" }
+body       = {}
+list       = {}
+btn_yes    = { fg = "#0b0b0c", bg = "#b19a67" }
+btn_no     = { fg = "#81786b" }
+btn_labels = [ "  [T]ak  ", "  (N)ie  " ]
+
+[spot]
+border = { fg = "#5c5037" }
+title  = { fg = "#b19a67" }
+
+tbl_col  = { fg = "#b19a67" }
+tbl_cell = { fg = "#d7d0c5", bg = "#5c5037" }
+
+[notify]
+title_info  = { fg = "#b19a67" }
+title_warn  = { fg = "#b19a67" }
+title_error = { fg = "#8f4935" }
+
+[pick]
+border   = { fg = "#5c5037" }
+active   = { fg = "#b19a67", bold = true }
+inactive = { fg = "#81786b" }
+
+[input]
+border   = { fg = "#5c5037" }
+title    = { fg = "#b19a67" }
+value    = { fg = "#d7d0c5" }
+selected = { fg = "#d7d0c5", bg = "#5c5037" }
+
+[cmp]
+border   = { fg = "#5c5037" }
+active   = { fg = "#d7d0c5", bg = "#5c5037" }
+inactive = { fg = "#81786b" }
+
+[tasks]
+border  = { fg = "#5c5037" }
+title   = { fg = "#b19a67" }
+hovered = { fg = "#b19a67", bold = true }
+
+[help]
+on      = { fg = "#b19a67" }
+run     = { fg = "#81786b" }
+desc    = {}
+hovered = { fg = "#d7d0c5", bg = "#5c5037", bold = true }
+footer  = { fg = "#0b0b0c", bg = "#81786b" }
+
+# ----- FILE TYPES -----
+# Directories in the text color, files muted, executables barely
+# warmer. Broken link (orphan) and dummy file (dummy) - ember,
+# because that is an actual error on disk.
+[filetype]
+rules = [
+	{ url = "*", is = "orphan", fg = "#8f4935" },
+	{ url = "*", is = "dummy",  fg = "#8f4935" },
+	{ url = "*/", is = "dummy", fg = "#8f4935" },
+	{ mime = "vfs/{absent,stale}", fg = "#55504a" },
+	{ url = "*/", fg = "#d7d0c5", bold = true },
+	{ url = "*", is = "exec", fg = "#b19a67" },
+	{ url = "*", fg = "#81786b" },
+]
+
+# ----- ICONS -----
+# Empty lists for names, extensions and patterns - no hundreds of icons in
+# brand colors. The per-kind icons remain: directory, file, link,
+# executable - all in the colors of the list above.
+[icon]
+globs = []
+dirs  = []
+files = []
+exts  = []
+conds = [
+	{ if = "orphan", text = "", fg = "#8f4935" },
+	{ if = "dummy",  text = "", fg = "#8f4935" },
+	{ if = "link",   text = "", fg = "#81786b" },
+	{ if = "dir",    text = "", fg = "#b19a67" },
+	{ if = "exec",   text = "", fg = "#b19a67" },
+	{ if = "!dir",   text = "", fg = "#55504a" },
+]

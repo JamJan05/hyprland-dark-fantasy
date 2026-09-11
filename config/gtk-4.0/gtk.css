@@ -1,0 +1,90 @@
+/* -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+   DARK-FANTASY PALETTE FOR GTK 4.0 APPLICATIONS
+
+   The base theme is adw-gtk3 (gtk-theme-name in settings.ini next to this) -
+   a port of the libadwaita look to GTK 3. Both adw-gtk3 and libadwaita itself
+   in GTK 4 build their colors from NAMED colors (@define-color), and the user
+   file is read after the theme. So overriding the names is enough
+   for every application - both old GTK 3 ones and new libadwaita ones -
+   to get our palette without touching the theme itself.
+
+   Breeze with Plasma modules used to be here (gtk-modules=colorreload-gtk-module:
+   window-decorations-gtk-module). Outside a Plasma session nothing can
+   feed those modules, so they went away together with Breeze.
+
+   KDE WARNING: kde-gtk-config writes its own gtk.css when the theme is
+   changed in Plasma System Settings. After such a change in a Plasma
+   session this file stops being a link to the repository - then
+   ./install.sh --apply links it back.
+
+   Palette from the README:
+     background #0b0b0c   surface #151311   surface alt. #201c18
+     text       #d7d0c5   muted   #81786b   gold         #b19a67
+     ember      #8f4935   iron    #55504a
+   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
+
+/* ----- ACCENT -----
+   Gold is the theme's only accent. Text on a gold background is nearly
+   black, because #d7d0c5 on #b19a67 has no readable contrast. */
+@define-color accent_color      #b19a67;
+@define-color accent_bg_color   #b19a67;
+@define-color accent_fg_color   #0b0b0c;
+
+/* ----- WINDOWS AND VIEWS ----- */
+@define-color window_bg_color   #0b0b0c;
+@define-color window_fg_color   #d7d0c5;
+@define-color view_bg_color     #151311;
+@define-color view_fg_color     #d7d0c5;
+
+/* ----- TITLE BAR -----
+   Surface, not background - the bar should stand apart from the window
+   content by its plane alone, without a gradient and without a shadow. */
+@define-color headerbar_bg_color        #151311;
+@define-color headerbar_fg_color        #d7d0c5;
+@define-color headerbar_border_color    rgba(177, 154, 103, 0.20);
+@define-color headerbar_backdrop_color  #0b0b0c;
+@define-color headerbar_shade_color     rgba(0, 0, 0, 0.36);
+
+/* ----- SIDEBAR, CARDS, DIALOGS ----- */
+@define-color sidebar_bg_color          #151311;
+@define-color sidebar_fg_color          #d7d0c5;
+@define-color sidebar_backdrop_color    #0b0b0c;
+@define-color sidebar_shade_color       rgba(0, 0, 0, 0.36);
+@define-color card_bg_color             #201c18;
+@define-color card_fg_color             #d7d0c5;
+@define-color card_shade_color          rgba(0, 0, 0, 0.36);
+@define-color dialog_bg_color           #151311;
+@define-color dialog_fg_color           #d7d0c5;
+@define-color popover_bg_color          #151311;
+@define-color popover_fg_color          #d7d0c5;
+@define-color thumbnail_bg_color        #201c18;
+@define-color thumbnail_fg_color        #d7d0c5;
+@define-color shade_color               rgba(0, 0, 0, 0.36);
+@define-color scrollbar_outline_color   rgba(0, 0, 0, 0.5);
+
+/* ----- STATES -----
+   Ember means "alarm" and nothing else: an error and a destructive action.
+   Warning gets gold, success - the muted moss from the kitty palette (color2),
+   so that no state introduces a color from outside the theme. */
+@define-color destructive_color     #8f4935;
+@define-color destructive_bg_color  #8f4935;
+@define-color destructive_fg_color  #d7d0c5;
+@define-color error_color           #8f4935;
+@define-color error_bg_color        #8f4935;
+@define-color error_fg_color        #d7d0c5;
+@define-color warning_color         #b19a67;
+@define-color warning_bg_color      #b19a67;
+@define-color warning_fg_color      #0b0b0c;
+@define-color success_color         #6f7a53;
+@define-color success_bg_color      #6f7a53;
+@define-color success_fg_color      #d7d0c5;
+
+/* ----- SHARP CORNERS -----
+   Zero rounding, as in the whole theme. A universal selector, because
+   the rounding sits in the theme in dozens of rules (buttons,
+   entries, cards, tooltips, window corners) and listing them one by one
+   would drift out of sync with every adw-gtk3 version. The user file takes
+   precedence over the theme, so one rule is enough. */
+* {
+    border-radius: 0;
+}

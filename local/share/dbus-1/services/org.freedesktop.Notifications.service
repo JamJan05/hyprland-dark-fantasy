@@ -1,0 +1,29 @@
+# Points to the QUICKSHELL SHELL as the notification daemon.
+#
+# The name org.freedesktop.Notifications is registered for D-Bus activation by
+# several installed packages:
+#   /usr/share/dbus-1/services/fr.emersion.mako.service          (mako)
+#   /usr/share/dbus-1/services/org.erikreider.swaync.service     (swaync)
+#   /usr/share/dbus-1/services/org.kde.plasma.Notifications.service
+#
+# When some program sends the first notification before the proper daemon
+# has had time to start, D-Bus brings up ONE from this list - and there is no
+# guarantee it is the one we want. The user directory is
+# searched BEFORE /usr/share, so this file decides the choice.
+#
+# It used to point to swaync. Since notifications were taken over by
+# Quickshell (config/quickshell/dark-fantasy, services/Notifications.qml),
+# it points to the shell - otherwise the first tooltip at session start
+# would bring up swaync, which would take the D-Bus name and our server would
+# not see a single notification anymore.
+#
+# The -n (--no-duplicate) flag makes sure activation does not start a second
+# shell instance when one is already running from autostart.
+#
+# BACK TO SWAYNC: change Exec back to /usr/bin/swaync and restore
+# run_once("swaync") in config/hypr/hyprland.lua. The package is still
+# installed. Simpler: switch to the main branch.
+
+[D-BUS Service]
+Name=org.freedesktop.Notifications
+Exec=/usr/bin/qs -n -c dark-fantasy

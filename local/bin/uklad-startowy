@@ -1,0 +1,107 @@
+#!/bin/bash
+# Welcome layout of the desktop, built once at session start.
+#
+#     ┌──────────────────┬──────────────────┐
+#     │     terminal     │                  │
+#     ├──────────────────┤       yazi       │
+#     │    tty-clock     │                  │
+#     └──────────────────┴──────────────────┘
+#
+# Called from the autostart in ~/.config/hypr/hyprland.lua.
+#
+# ----------------------------------------------------------------------
+# WHY A SCRIPT, AND NOT THREE exec-once
+#
+# Dwindle splits a window along its longer side, but WHICH side the new
+# window lands on is decided by the dwindle:force_split option.
+# The default 0 means "wherever the mouse happens to be" - so the layout
+# would come out differently at every login, depending on where the cursor
+# was at startup.
+#
+# Determinism comes from force_split = 2 set PERMANENTLY in hyprland.lua,
+# not here.
+#
+# The first version of this script tried to set that option on the fly via
+# "hyprctl keyword" and restore it at the end. It turned out that with
+# a Lua configuration "hyprctl keyword" simply DOES NOT WORK: reading right
+# after writing shows the old value, and there is no error at all. Because
+# of that the layout came out right one time and mirrored the next - in
+# reality the mouse position decided, not the script.
+#
+# Measured after setting it in hyprland.lua and reloading:
+#     force_split = 1  ->  NEW window to the LEFT / to the TOP
+#     force_split = 2  ->  NEW window to the RIGHT / to the BOTTOM
+#
+# The second thing three exec-once entries cannot do: we have to
+# WAIT for each window to appear. Launched all at once, they would race
+# and the split would come out random.
+# ----------------------------------------------------------------------
+
+TERMINAL="${TERMINAL:-kitty}"
+
+command -v hyprctl >/dev/null 2>&1 || exit 0
+command -v jq      >/dev/null 2>&1 || exit 0
+command -v "$TERMINAL" >/dev/null 2>&1 || exit 0
+
+# We count windows on the CURRENT desktop, not in the whole session. At login
+# it comes to the same thing (all desktops are empty), but this way the layout
+# can be tested on a free desktop without closing what is already open.
+biezacy_pulpit() {
+    hyprctl activeworkspace -j 2>/dev/null | jq '.id' 2>/dev/null || echo 1
+}
+
+liczba_okien() {
+    local ws
+    ws=$(biezacy_pulpit)
+    hyprctl clients -j 2>/dev/null \
+        | jq --argjson ws "$ws" '[.[] | select(.workspace.id == $ws)] | length' 2>/dev/null \
+        || echo 0
+}
+
+# Waits until the window count grows. The timeout is there so that
+# a failed program start does not hang the whole autostart - the
+# layout then comes out incomplete, but the session starts normally.
+czekaj_na_okno() {
+    local przed="$1" i=0
+    while [[ $(liczba_okien) -le $przed ]]; do
+        sleep 0.15
+        (( ++i > 60 )) && return 1   # ~9 seconds
+    done
+    # A moment for the compositor to place the window before we split it further.
+    sleep 0.25
+    return 0
+}
+
+# The desktop must be empty. Without this, a manual autostart call via
+# __autostart() - or a second run of this script - would add
+# another set of windows to the ones already open.
+[[ $(liczba_okien) -eq 0 ]] || exit 0
+
+# 1. Terminal - the only window, takes the whole screen.
+n=$(liczba_okien)
+"$TERMINAL" >/dev/null 2>&1 &
+czekaj_na_okno "$n" || exit 0
+
+# 2. Yazi - the screen is wider than it is tall, so the split is vertical
+#    and the new window lands on the RIGHT.
+n=$(liczba_okien)
+"$TERMINAL" -e yazi >/dev/null 2>&1 &
+czekaj_na_okno "$n" || exit 0
+
+# 3. Back to the left column. It is now taller than it is wide, so
+#    the next split will be horizontal, and the clock lands at the BOTTOM.
+hyprctl dispatch 'hl.dsp.focus({ direction = "left" })' >/dev/null 2>&1
+sleep 0.2
+
+n=$(liczba_okien)
+#   -c  clock centered in the terminal
+#   -s  with seconds
+#   -C 3  yellow - the closest to the gold of the dark-fantasy palette
+#   -n  do not quit on a key press (otherwise the clock dies
+#       at the first accidental touch of the keyboard)
+"$TERMINAL" -e tty-clock -c -s -n -C 3 >/dev/null 2>&1 &
+czekaj_na_okno "$n" || exit 0
+
+# Keyboard focus lands in the terminal, not on the clock or in yazi -
+# it is the only one of these three windows you actually type into.
+hyprctl dispatch 'hl.dsp.focus({ direction = "up" })' >/dev/null 2>&1

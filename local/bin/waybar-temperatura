@@ -1,0 +1,92 @@
+#!/bin/bash
+# The "custom/temperatura" module in Waybar (return-type: json, interval 3).
+#
+# Waybar expects one line of JSON on standard output with the keys:
+#   text     - the label on the bar (Pango markup can be used in it)
+#   tooltip  - the tooltip shown on mouse hover
+#   class    - name of a CSS class added to the module; style.css colors
+#              "critical" red (#custom-temperatura.critical)
+#
+# Sensors come from /sys/class/hwmon. The hwmonN numbers can change
+# after a reboot (they depend on the order kernel modules are loaded in),
+# so we find the directory by the content of its "name" file, not by number.
+
+# From this many degrees the module turns ember-colored. 70, not 80 as before:
+# the same threshold lights up the "temperatura" status in the left-corner HUD
+# (hud/StatusNarastajacy.qml), and the bar and the HUD must not disagree
+# on whether the CPU is hot.
+PROG_ALARMU=70
+
+# Returns the path of the hwmon directory with the given name, e.g. "k10temp".
+hwmon_sciezka() {
+    local d
+    for d in /sys/class/hwmon/hwmon*; do
+        [[ -r "$d/name" && $(<"$d/name") == "$1" ]] && { printf '%s' "$d"; return 0; }
+    done
+    return 1
+}
+
+# Reads the temperature in whole degrees. $1 = hwmon name, $2 = sensor
+# number (tempN). The kernel reports millidegrees, hence the division by 1000.
+stopnie() {
+    local d v
+    d=$(hwmon_sciezka "$1") || return 1
+    [[ -r "$d/temp$2_input" ]] || return 1
+    v=$(<"$d/temp$2_input")
+    [[ -n "$v" ]] || return 1
+    printf '%d' $(( (v + 500) / 1000 ))
+}
+
+# Tctl is the Ryzen control temperature - the same one the firmware looks at
+# when spinning the fan. If it is missing (a different CPU), we fall back to
+# acpitz, the generic motherboard sensor.
+cpu=$(stopnie k10temp 1) || cpu=$(stopnie acpitz 1) || cpu=""
+gpu=$(stopnie amdgpu 1)  || gpu=""
+ssd=$(stopnie nvme 1)    || ssd=""
+
+# Without a CPU reading the module has nothing to show - an empty JSON tells
+# Waybar to hide the pill instead of drawing an empty space.
+if [[ -z $cpu ]]; then
+    printf '{}\n'
+    exit 0
+fi
+
+klasa=""
+(( cpu >= PROG_ALARMU )) && klasa="critical"
+
+# The icon gets its own color only outside an alarm. With "critical" it stays
+# bare, so that the style.css rule repaints the whole module in ember - a span
+# with a color would take precedence and the icon would stay gold.
+#
+# Gold, because #fab387 used to be here - an orange from the Catppuccin
+# palette, the only color outside the dark-fantasy palette on the whole bar.
+if [[ -n $klasa ]]; then
+    tekst="󰸁 ${cpu}°C"
+else
+    tekst="<span color='#b19a67'>󰔏</span> ${cpu}°C"
+fi
+
+# Tooltip language from df-jezyk (en by default, pl once chosen in Cogwheel).
+# The script runs every 3 s anyway, and after a language change Waybar runs it
+# right away via signal 12 (see config.jsonc). df-jezyk lives next to it.
+jezyk=en
+if [[ -x ${BASH_SOURCE[0]%/*}/df-jezyk ]]; then
+    jezyk=$("${BASH_SOURCE[0]%/*}/df-jezyk")
+elif command -v df-jezyk >/dev/null 2>&1; then
+    jezyk=$(df-jezyk)
+fi
+
+if [[ $jezyk == pl ]]; then
+    e_cpu="Procesor" e_gpu="Grafika" e_ssd="Dysk NVMe"
+else
+    e_cpu="CPU" e_gpu="GPU" e_ssd="NVMe drive"
+fi
+
+# Tooltip: the CPU always, the rest only when the sensor exists.
+# "\n" must stay here as two literal characters - JSON turns them
+# into a newline on Waybar's side.
+dymek="${e_cpu}: ${cpu}°C"
+[[ -n $gpu ]] && dymek+="\n${e_gpu}: ${gpu}°C"
+[[ -n $ssd ]] && dymek+="\n${e_ssd}: ${ssd}°C"
+
+printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' "$tekst" "$dymek" "$klasa"

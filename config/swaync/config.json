@@ -1,0 +1,80 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+
+  "//": "SwayNC notification center. The look lives in style.css next to it.",
+  "//1": "This file overrides /etc/xdg/swaync/config.json - keys that are",
+  "//2": "not here are taken from that system file.",
+
+  "//pozycja": "Notifications and the panel slide out from the top right corner,",
+  "//pozycja2": "i.e. from under the bell button in Waybar.",
+  "positionX": "right",
+  "positionY": "top",
+
+  "//warstwa": "Bubbles on the overlay layer - they must be visible even above",
+  "//warstwa2": "a fullscreen window. The panel itself on the top layer, so that it",
+  "//warstwa3": "does not cover the dock and the bar when someone leaves it open.",
+  "layer": "overlay",
+  "control-center-layer": "top",
+  "layer-shell": true,
+
+  "//odstep": "Panel offset from the top and right edges. 50 px at the top",
+  "//odstep2": "is 6 px of bar margin + 38 px of bar height + 6 px of slack,",
+  "//odstep3": "so the panel starts right below the bar, not behind it.",
+  "control-center-margin-top": 50,
+  "control-center-margin-right": 12,
+  "control-center-margin-bottom": 12,
+  "control-center-margin-left": 0,
+
+  "//css": "\"user\" means our style.css wins over the GTK theme.",
+  "cssPriority": "user",
+  "ignore-gtk-theme": true,
+
+  "//czasy": "How many seconds a bubble stays up. Critical ones (timeout-critical: 0)",
+  "//czasy2": "do not disappear on their own - you have to click them, and that is the point.",
+  "timeout": 8,
+  "timeout-low": 4,
+  "timeout-critical": 0,
+
+  "control-center-width": 440,
+  "control-center-height": 620,
+  "notification-window-width": 400,
+
+  "fit-to-screen": true,
+  "relative-timestamps": true,
+  "keyboard-shortcuts": true,
+  "notification-grouping": true,
+  "image-visibility": "when-available",
+  "transition-time": 180,
+  "hide-on-clear": true,
+  "hide-on-action": true,
+
+  "notification-body-image-height": 120,
+  "notification-body-image-width": 220,
+
+  "text-empty": "Silence. The flame has dimmed.",
+
+  "//widgety": "Order of the blocks in the panel, top to bottom.",
+  "//widgety2": "The 'mpris' widget was removed from here - the player now has",
+  "//widgety3": "its own panel in Quickshell (config/quickshell/dark-fantasy),",
+  "//widgety4": "opened by clicking the track title on the bar or with SUPER+O.",
+  "//widgety5": "Keeping both would mean two full players at once.",
+  "widgets": [
+    "title",
+    "dnd",
+    "notifications"
+  ],
+
+  "widget-config": {
+    "title": {
+      "text": "Notifications",
+      "clear-all-button": true,
+      "button-text": "Clear"
+    },
+    "dnd": {
+      "text": "Do not disturb"
+    },
+    "notifications": {
+      "vexpand": true
+    }
+  }
+}

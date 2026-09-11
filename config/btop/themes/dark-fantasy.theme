@@ -1,0 +1,79 @@
+# -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+# BTOP THEME - dark-fantasy.
+#
+# Palette from the repository README. The CPU, memory and network graphs use the
+# three colors of the HUD bars in the left corner of the bar (Theme.qml: hudStamina,
+# hudFp, hudHp) - the same color means the same thing here and there:
+#
+#     CPU        stamina  #4f5d3a
+#     memory     FP       #3f5566
+#     network    HP       #7a2c26
+#
+# NO GRADIENTS: every start/mid/end set has one color, so a graph does not
+# shift from green to red. Ember (#8f4935) does not appear at all -
+# in this theme it means only alarm, and btop has no alarm threshold.
+#
+# btop draws frames with a single line of characters (with rounded_corners = False
+# in btop.conf - sharp corners); their color is gold #b19a67 at 20 % mixed
+# with the background #0b0b0c, i.e. #2c281e - Theme.border on a dark background.
+# -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+# Background - empty = terminal background (theme_background = False in btop.conf).
+theme[main_bg]=""
+
+theme[main_fg]="#d7d0c5"
+theme[title]="#b19a67"
+theme[hi_fg]="#b19a67"
+
+# Selected process - dimmed gold, like the selection in yazi.
+theme[selected_bg]="#4a4130"
+theme[selected_fg]="#d7d0c5"
+
+theme[inactive_fg]="#55504a"
+theme[graph_text]="#81786b"
+theme[meter_bg]="#201c18"
+theme[proc_misc]="#81786b"
+
+# Frames and dividing lines.
+theme[cpu_box]="#2c281e"
+theme[mem_box]="#2c281e"
+theme[net_box]="#2c281e"
+theme[proc_box]="#2c281e"
+theme[div_line]="#2c281e"
+
+# Temperature - muted text, no shift into red.
+theme[temp_start]="#81786b"
+theme[temp_mid]="#81786b"
+theme[temp_end]="#81786b"
+
+# CPU - stamina.
+theme[cpu_start]="#4f5d3a"
+theme[cpu_mid]="#4f5d3a"
+theme[cpu_end]="#4f5d3a"
+
+# Memory and disks - FP for used and available, iron for the rest.
+theme[free_start]="#55504a"
+theme[free_mid]="#55504a"
+theme[free_end]="#55504a"
+theme[cached_start]="#55504a"
+theme[cached_mid]="#55504a"
+theme[cached_end]="#55504a"
+theme[available_start]="#3f5566"
+theme[available_mid]="#3f5566"
+theme[available_end]="#3f5566"
+theme[used_start]="#3f5566"
+theme[used_mid]="#3f5566"
+theme[used_end]="#3f5566"
+
+# Network - HP.
+theme[download_start]="#7a2c26"
+theme[download_mid]="#7a2c26"
+theme[download_end]="#7a2c26"
+theme[upload_start]="#7a2c26"
+theme[upload_mid]="#7a2c26"
+theme[upload_end]="#7a2c26"
+
+# Process list - one color (proc_gradient = False disables the transition anyway).
+theme[process_start]="#81786b"
+theme[process_mid]="#81786b"
+theme[process_end]="#81786b"

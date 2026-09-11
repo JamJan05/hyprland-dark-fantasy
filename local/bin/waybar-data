@@ -1,0 +1,30 @@
+#!/bin/bash
+# The "custom/data" module in Waybar - "piątek, 11 września" / "Friday,
+# 11 September" next to the clock (interval 60 + signal 12).
+#
+# The language comes from df-jezyk (en by default, pl once chosen in Cogwheel),
+# not from the system locale: an English bar on a Polish system should show
+# an English date. After a language change the shell sends SIGRTMIN+12 and
+# Waybar runs the script right away, without waiting for the minute.
+#
+# "%-d" (day without a leading zero) is known only to GNU date - std::chrono
+# in the built-in "clock" lacks it, hence a separate script. glibc in pl_PL
+# gives the genitive for %B right away: "września", not "wrzesień".
+#
+# LC_ALL, not LC_TIME: an LC_ALL set in the session would override LC_TIME.
+
+# df-jezyk lives next to it (both scripts are symlinked into ~/.local/bin).
+jezyk() {
+    local obok=${BASH_SOURCE[0]%/*}/df-jezyk
+    if [[ -x $obok ]]; then "$obok"
+    elif command -v df-jezyk >/dev/null 2>&1; then df-jezyk
+    else echo en
+    fi
+}
+
+lokalizacja=C.UTF-8
+if [[ $(jezyk) == pl ]] && locale -a 2>/dev/null | grep -qix 'pl_PL\.utf-\?8'; then
+    lokalizacja=pl_PL.UTF-8
+fi
+
+LC_ALL=$lokalizacja exec date '+%A, %-d %B'

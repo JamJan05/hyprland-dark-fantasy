@@ -1,0 +1,170 @@
+#!/bin/bash
+# The "custom/odtwarzacz" module in Waybar - title and artist in the "now" frame.
+#
+# ----------------------------------------------------------------------
+# WHY NOT THE BUILT-IN "mpris" MODULE
+#
+# The frame in the middle of the bar (clock | player) MUST NOT change width,
+# because the clock has to stay put. With no player, the built-in "mpris"
+# disappears from the bar completely - its "format-stopped" with empty text
+# hides the module, and a non-empty one does not work anyway when there is no
+# player, because the module then gets no data at all. The frame then shrank
+# by a whole zone, and the clock jumped sideways.
+#
+# This script always prints something: the title when something plays, and
+# "silence"/"cisza" when nothing does. The zone width is held by "min-width"
+# in style.css, and "max-length" in config.jsonc cuts titles that are too long.
+#
+# ----------------------------------------------------------------------
+# NO POLLING
+#
+# "playerctl --follow" prints a new line on every change of metadata
+# or playback status, and an empty one when the player goes away. The module
+# has no "interval" key, so Waybar reads the output live, line by line.
+#
+# The outer loop is there in case playerctl exits (e.g. after a restart
+# of the session D-Bus) - without it the module would freeze on the last title.
+#
+# ----------------------------------------------------------------------
+# LANGUAGE (en by default, pl once chosen in Cogwheel)
+#
+# The SIGRTMIN+12 signal, which the shell uses to refresh the bar after
+# a language change, does nothing here: a continuous script is not restarted,
+# and Waybar does not pass the signal on to its child. That is why "read -t"
+# waits for playerctl at most KROK seconds; when nothing has arrived, the script
+# asks df-jezyk and on a change prints the last state again, in the new language.
+# Without a change it prints nothing, so Waybar does not redraw the module.
+# ----------------------------------------------------------------------
+
+KROK=3
+
+# df-jezyk lives next to it (both scripts are symlinked into ~/.local/bin).
+jezyk() {
+    local obok=${BASH_SOURCE[0]%/*}/df-jezyk
+    if [[ -x $obok ]]; then "$obok"
+    elif command -v df-jezyk >/dev/null 2>&1; then df-jezyk
+    else echo en
+    fi
+}
+
+teksty() {
+    if [[ $JEZYK == pl ]]; then
+        T_CISZA="cisza"
+        T_NIC="Nic nie gra"
+        T_NIEZNANY="nieznany utwór"
+        T_KLIK="klik: panel odtwarzacza"
+        T_NAJAZD="najedź, aby rozwinąć przyciski"
+    else
+        T_CISZA="silence"
+        T_NIC="Nothing playing"
+        T_NIEZNANY="unknown track"
+        T_KLIK="click: player panel"
+        T_NAJAZD="hover to reveal the buttons"
+    fi
+}
+
+# Returns 0 when the language has changed (and switches the texts).
+zmiana_jezyka() {
+    local j
+    j=$(jezyk)
+    [[ $j == "$JEZYK" ]] && return 1
+    JEZYK=$j
+    teksty
+}
+
+# One line of JSON for Waybar.
+#
+# The order of escaping matters: Pango first (the text goes into
+# markup), then JSON. The other way round, the JSON escaping would collide
+# with the Pango ampersand. The tooltip arrives with REAL newline
+# characters, and only at the very end do we turn them into JSON "\n" - written
+# earlier as "\n" they would get a second backslash and Waybar would show
+# a literal "\n" in the tooltip.
+#
+# Entity replacements in quotes: since bash 5.2 (patsub_replacement)
+# a bare "&" in the replacement means "the matched text", so "<" gave "<lt;".
+wypisz() {  # $1 = text, $2 = class, $3 = tooltip
+    local t=$1 d=$3
+    t=${t//&/"&amp;"}; t=${t//</"&lt;"}; t=${t//>/"&gt;"}
+    d=${d//&/"&amp;"}; d=${d//</"&lt;"}; d=${d//>/"&gt;"}
+    t=${t//\\/\\\\}; t=${t//\"/\\\"}
+    d=${d//\\/\\\\}; d=${d//\"/\\\"}
+    d=${d//$'\n'/\\n}
+    printf '{"text":"%s","class":"%s","tooltip":"%s"}\n' "$t" "$2" "$d"
+}
+
+# Prints the current state (variables stan, tytul, wykonawca).
+#
+# The CSS classes ("gra", "pauza", "cisza") stay Polish regardless of
+# the language - style.css colors the title by them. Only the text is translated.
+pokaz() {
+    if [[ -z $stan || ( -z $tytul && -z $wykonawca ) ]]; then
+        wypisz "$T_CISZA" "cisza" "$T_NIC"$'\n\n'"$T_KLIK"
+        return
+    fi
+
+    local tekst=${tytul:-$T_NIEZNANY} klasa
+    [[ -n $wykonawca ]] && tekst+="  ·  $wykonawca"
+
+    case $stan in
+        Playing) klasa="gra" ;;
+        Paused)  klasa="pauza" ;;
+        *)       klasa="cisza" ;;
+    esac
+
+    wypisz "$tekst" "$klasa" "${tytul}"$'\n'"${wykonawca}"$'\n\n'"$T_KLIK  •  $T_NAJAZD"
+}
+
+JEZYK=$(jezyk)
+teksty
+stan="" tytul="" wykonawca=""
+
+if ! command -v playerctl >/dev/null 2>&1; then
+    pokaz
+    while sleep "$KROK"; do
+        zmiana_jezyka && pokaz
+    done
+    exit 0
+fi
+
+# Tab as the field separator - titles contain dashes, dots
+# and colons, but a tab practically never appears in a track title.
+FORMAT=$'{{status}}\t{{title}}\t{{artist}}'
+
+while true; do
+    # Initial state: with no player, "--follow" stays silent until the first
+    # change, so the frame would stand empty.
+    zmiana_jezyka
+    stan="" tytul="" wykonawca=""
+    pokaz
+
+    while true; do
+        IFS= read -r -t "$KROK" linia
+        kod=$?
+
+        if (( kod == 0 )); then
+            # We split the fields by hand, not with IFS=$'\t': for "read" a tab
+            # is whitespace, so an empty field (no title) would merge with
+            # its neighbor and the artist would jump into the title's place.
+            stan=${linia%%$'\t'*}
+            reszta=${linia#*$'\t'}
+            [[ $reszta == "$linia" ]] && reszta=""
+            tytul=${reszta%%$'\t'*}
+            wykonawca=${reszta#*$'\t'}
+            [[ $wykonawca == "$reszta" ]] && wykonawca=""
+
+            # Control characters from metadata (they occur in titles
+            # from the browser) would break the JSON.
+            tytul=${tytul//[$'\001'-$'\037']/ }
+            wykonawca=${wykonawca//[$'\001'-$'\037']/ }
+            pokaz
+        elif (( kod > 128 )); then
+            # KROK elapsed with no new line - a chance to check the language.
+            zmiana_jezyka && pokaz
+        else
+            break    # playerctl has exited
+        fi
+    done < <(playerctl --follow metadata --format "$FORMAT" 2>/dev/null)
+
+    sleep 2
+done

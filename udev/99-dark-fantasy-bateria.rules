@@ -1,0 +1,26 @@
+# -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+# WRITE ACCESS TO BATTERY CHARGE THRESHOLDS FOR THE wheel GROUP.
+#
+# charge_control_start_threshold and charge_control_end_threshold are owned by
+# root (rw-r--r--). Without this rule the charge limit from the Cogwheel goes through
+# pkexec and asks for a password on every change, and at session start the shell
+# does not restore it at all (a password dialog at login would be worse than
+# not restoring it).
+#
+# The wheel group, because this is a hardware setting that an administrator
+# can change via sudo anyway - the permission goes to nobody new.
+#
+# "add|change" rather than just "add": thinkpad_acpi adds the threshold files to
+# the battery only after it is registered, so at the moment of the "add" event
+# they may not exist yet. The battery reports "change" on every state change,
+# so the permissions get set anyway; "test -e" skips a missing file without
+# an error. "$$" in udev rules is a literal "$" character.
+#
+# Installation (root):
+#   mkdir -p /etc/udev/rules.d   (on Gentoo the directory may not exist - package
+#                                 rules live in /lib/udev/rules.d)
+#   cp udev/99-dark-fantasy-bateria.rules /etc/udev/rules.d/
+#   udevadm trigger --subsystem-match=power_supply --action=change
+# -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+SUBSYSTEM=="power_supply", KERNEL=="BAT[0-9]*", ACTION=="add|change", \
+  RUN+="/bin/sh -c 'for f in charge_control_start_threshold charge_control_end_threshold; do test -e /sys%p/$$f && chgrp wheel /sys%p/$$f && chmod g+w /sys%p/$$f; done'"

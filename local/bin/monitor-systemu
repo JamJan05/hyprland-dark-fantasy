@@ -1,0 +1,33 @@
+#!/bin/bash
+# System monitor: btop in a panel window - the Status tile.
+#
+# Kitty gets the window class "df-panel" (a floating window 70 x 70 % in the
+# middle of the screen, rule in hyprland.lua) and an extra config from
+# panel.conf. It exists for the same reason as local/bin/menedzer-plikow - btop
+# is a terminal program, and the tile calls a single command. Yazi from the
+# Satchel, on the other hand, opens as a regular tiled window (explained in
+# menedzer-plikow).
+#
+# btop gets its config explicitly (-c). The file ~/.config/btop/btop.conf is
+# a symlink into the repository and has save_config_on_exit = False - without
+# that, btop would rewrite it its own way on every exit, straight into the repo.
+
+TERMINAL="${TERMINAL:-kitty}"
+
+command -v "$TERMINAL" >/dev/null 2>&1 || exit 1
+command -v btop >/dev/null 2>&1 || exit 1
+
+BTOP_KONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/btop/btop.conf"
+btop=(btop)
+[[ -r $BTOP_KONFIG ]] && btop+=(-c "$BTOP_KONFIG")
+
+if [[ $(basename "$TERMINAL") == kitty ]]; then
+    KONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/kitty"
+    flagi=(--class df-panel)
+    if [[ -r $KONFIG/panel.conf ]]; then
+        flagi+=(--config "$KONFIG/kitty.conf" --config "$KONFIG/panel.conf")
+    fi
+    exec "$TERMINAL" "${flagi[@]}" -e "${btop[@]}"
+fi
+
+exec "$TERMINAL" -e "${btop[@]}"

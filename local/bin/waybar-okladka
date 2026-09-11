@@ -1,0 +1,146 @@
+#!/bin/bash
+# The "image#okladka" module in Waybar (interval 3).
+#
+# The "image" module expects a PATH TO an image FILE on its output - not
+# JSON and not a URL.
+#
+# The player provides the cover art over MPRIS, in the "mpris:artUrl" field.
+# It is either a local address (file://) or a web one (http://, https://) -
+# depending on the player. Spotify and browsers give network links,
+# so the image first has to be downloaded to disk.
+#
+# ----------------------------------------------------------------------
+# THE COVER ART IS PROCESSED, NOT SHOWN AS IS
+#
+# The colorful album cover was the only saturated image on the whole bar
+# and pulled the eye away from the clock. The script turns it into a square
+# in the theme's tones: desaturated, slightly darkened, with a dark vignette
+# at the edges - like an old engraving, not an album ad. Pillow
+# (dev-python/pillow) does it, ONCE per cover; the result sits in the cache
+# next to the original.
+#
+# ----------------------------------------------------------------------
+# WHEN NOTHING PLAYS - A DARK SQUARE, NOT EMPTINESS
+#
+# The "now" frame in the middle of the bar must not change width (the clock
+# has to stay put). An empty image module gets the "empty" class and collapses
+# to zero, so instead of disappearing we show a dimmed square in the
+# surface color - the same size as the cover art.
+# ----------------------------------------------------------------------
+
+PAMIEC="${XDG_CACHE_HOME:-$HOME/.cache}/waybar-okladka"
+PRZETWORZONE="$PAMIEC/rycina"
+
+mkdir -p "$PRZETWORZONE" || exit 0
+
+# Processing the cover art: $1 = source, $2 = result. 96 px - Waybar scales
+# the image down to "size" (24) itself, and the headroom lets it stay sharp
+# at screen scale 2 as well. No source ("-") draws a dimmed square.
+rycina() {
+    python3 - "$1" "$2" <<'PY' 2>/dev/null
+import sys
+from PIL import Image, ImageEnhance, ImageDraw
+
+zrodlo, wynik = sys.argv[1], sys.argv[2]
+BOK = 96
+
+if zrodlo == "-":
+    # Surface #151311 with a border in faded gold - the empty slot.
+    img = Image.new("RGB", (BOK, BOK), (21, 19, 17))
+    ImageDraw.Draw(img).rectangle([0, 0, BOK - 1, BOK - 1], outline=(58, 52, 40))
+else:
+    img = Image.open(zrodlo).convert("RGB")
+    # Center crop to a square - covers from the browser are sometimes 16:9.
+    w, h = img.size
+    b = min(w, h)
+    img = img.crop(((w - b) // 2, (h - b) // 2, (w - b) // 2 + b, (h - b) // 2 + b))
+    img = img.resize((BOK, BOK), Image.LANCZOS)
+    img = ImageEnhance.Color(img).enhance(0.18)      # almost no color
+    img = ImageEnhance.Brightness(img).enhance(0.82)  # no brighter than the bar text
+
+    # Vignette: brightness falls toward the corners with the squared distance from the center.
+    maska = Image.new("L", (BOK, BOK))
+    px = maska.load()
+    s = (BOK - 1) / 2
+    for y in range(BOK):
+        for x in range(BOK):
+            d = (((x - s) / s) ** 2 + ((y - s) / s) ** 2) / 2
+            px[x, y] = int(255 * min(1.0, d) * 0.75)
+    img = Image.composite(Image.new("RGB", (BOK, BOK), (11, 11, 12)), img, maska)
+
+img.save(wynik)
+PY
+}
+
+wypisz_cisze() {
+    local cisza="$PRZETWORZONE/cisza.png"
+    [[ -s $cisza ]] || rycina - "$cisza"
+    [[ -s $cisza ]] && printf '%s\n' "$cisza"
+    exit 0
+}
+
+# Without playerctl there is nowhere to get metadata from.
+command -v playerctl >/dev/null 2>&1 || wypisz_cisze
+
+# No player is playing, or it did not provide cover art.
+url=$(playerctl metadata mpris:artUrl 2>/dev/null) || wypisz_cisze
+[[ -n $url ]] || wypisz_cisze
+
+# file:// addresses are percent-encoded (a space is %20, etc.), so they
+# have to be decoded before use. sed turns %XX into the sequence
+# \xXX, and printf %b turns that into the real character.
+odkoduj() {
+    printf '%b' "$(sed 's/%\([0-9a-fA-F]\{2\}\)/\\x\1/g' <<< "$1")"
+}
+
+# File name from the address checksum: the same track always lands
+# in the same file, so when polling every 3 seconds we process the cover art
+# once, not twenty times a minute.
+klucz=$(printf '%s' "$url" | cksum | cut -d' ' -f1)
+wynik="$PRZETWORZONE/$klucz.png"
+
+if [[ ! -s $wynik ]]; then
+    case $url in
+        file://*)
+            plik=$(odkoduj "${url#file://}")
+            # The player may point to cover art that is no longer on
+            # disk. That is not a failure, just a reason to show the empty slot.
+            [[ -f $plik ]] || wypisz_cisze
+            ;;
+
+        http://*|https://*)
+            command -v curl >/dev/null 2>&1 || wypisz_cisze
+            plik="$PAMIEC/$klucz"
+
+            if [[ ! -s $plik ]]; then
+                # --max-time makes sure a sluggish network does not hang
+                # the module for good. We download alongside and swap in only
+                # after a successful download - otherwise we would process
+                # an image cut off halfway.
+                if curl -sfL --max-time 5 -o "$plik.tmp" "$url"; then
+                    mv -f "$plik.tmp" "$plik"
+                else
+                    rm -f "$plik.tmp"
+                    wypisz_cisze
+                fi
+            fi
+            ;;
+
+        *) wypisz_cisze ;;
+    esac
+
+    # Write alongside and swap - Waybar will not catch the file half-written.
+    rycina "$plik" "$wynik.tmp.png" && mv -f "$wynik.tmp.png" "$wynik"
+    [[ -s $wynik ]] || wypisz_cisze
+fi
+
+# Cleanup: we keep the 30 newest files in each directory and delete
+# the rest. Without this the cache would grow forever.
+for katalog in "$PAMIEC" "$PRZETWORZONE"; do
+    ls -1t "$katalog" 2>/dev/null | grep -vx 'rycina\|cisza.png' | tail -n +31 |
+    while read -r stary; do
+        rm -f -- "$katalog/$stary"
+    done
+done
+
+printf '%s\n' "$wynik"

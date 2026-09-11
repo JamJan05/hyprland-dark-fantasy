@@ -1,0 +1,232 @@
+/* -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+   NOTIFICATION CENTER LOOK (SwayNC).
+
+   Part of a set with waybar/style.css -
+   the same dark-fantasy palette and the same rounding.
+
+   Background blur is done by the layer rules in ~/.config/hypr/hyprland.lua
+   for the "swaync-control-center" and
+   "swaync-notification-window" namespaces - not by this file.
+
+   Node names are taken from /etc/xdg/swaync/style.css. SwayNC has
+   long, nested selectors (.notification-row >
+   .notification-background > .notification) and shortening them
+   means the rule simply does not match.
+   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
+
+@define-color bg        rgba(11, 11, 12, 0.92);   /* background #0b0b0c */
+@define-color karta     rgba(21, 19, 17, 0.94);   /* surface #151311 */
+@define-color karta-hov rgba(32, 28, 24, 0.98);   /* surface-alt #201c18 */
+@define-color fg        #d7d0c5;                  /* text */
+@define-color fg-dim    #81786b;                  /* muted */
+@define-color accent    #b19a67;                  /* gold */
+@define-color zar       #8f4935;                  /* ember */
+@define-color zelazo    #55504a;                  /* iron */
+@define-color obwodka   rgba(177, 154, 103, 0.22);
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font",
+                 "Noto Sans", sans-serif;
+    font-size: 13px;
+}
+
+/* The window that carries the bubbles must stay transparent, otherwise a dark
+   rectangle would sit in the top right corner of the screen even when nothing is showing. */
+.blank-window,
+.floating-notifications {
+    background: transparent;
+}
+
+/* ----- SINGLE NOTIFICATION (card) ----- */
+.notification-row .notification-background .notification {
+    background-color: @karta;
+    border: 1px solid @obwodka;
+    border-radius: 8px;
+    margin: 6px 10px;
+    padding: 0;
+    color: @fg;
+    box-shadow: 0 4px 14px rgba(6, 6, 7, 0.55);
+}
+
+.notification-row .notification-background .notification .notification-default-action {
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.notification-row .notification-background .notification .notification-default-action:hover {
+    background-color: @karta-hov;
+}
+
+/* Title, body and timestamp. The time is dimmed - it is secondary
+   information and should not compete with the body. */
+.notification-row .notification-background .notification
+  .notification-default-action .notification-content .text-box .summary {
+    color: @fg;
+    font-weight: 700;
+}
+
+.notification-row .notification-background .notification
+  .notification-default-action .notification-content .text-box .body {
+    color: @fg-dim;
+}
+
+.notification-row .notification-background .notification
+  .notification-default-action .notification-content .text-box .time {
+    color: @zelazo;
+    font-size: 11px;
+}
+
+/* Priorities. Low and normal look the same - the difference only shows
+   on critical, which gets an ember-colored border. */
+.notification-row .notification-background .notification.critical {
+    border-color: @zar;
+    box-shadow: 0 4px 14px rgba(143, 73, 53, 0.30);
+}
+
+/* ----- ACTION BUTTONS IN A NOTIFICATION ----- */
+.notification-row .notification-background .notification .notification-action > button,
+.control-center .control-center-list .notification .notification-action {
+    background-color: rgba(32, 28, 24, 0.85);
+    border: 1px solid @obwodka;
+    border-radius: 6px;
+    margin: 4px;
+    padding: 4px 10px;
+    color: @fg;
+}
+
+.control-center .control-center-list .notification .notification-action:hover {
+    background-color: @karta-hov;
+    color: @accent;
+}
+
+/* ----- CLOSE BUTTON ----- */
+.close-button {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    margin: 6px;
+    padding: 2px;
+    color: @fg-dim;
+}
+
+.close-button:hover {
+    background-color: rgba(143, 73, 53, 0.30);
+    color: @fg;
+}
+
+/* ----- PANEL (control center) ----- */
+.control-center {
+    background-color: @bg;
+    border: 1px solid @obwodka;
+    border-radius: 10px;
+    padding: 10px;
+    color: @fg;
+    box-shadow: 0 8px 24px rgba(6, 6, 7, 0.65);
+}
+
+.control-center .control-center-list {
+    background: transparent;
+}
+
+/* Label shown when there are no notifications at all ("text-empty" key). */
+.control-center .control-center-list-placeholder {
+    color: @zelazo;
+    font-style: italic;
+    padding: 24px;
+}
+
+/* ----- WIDGETS ----- */
+.widget {
+    background: transparent;
+    margin: 4px 0;
+}
+
+/* "Notifications" header + "Clear" button */
+.widget-title > label {
+    color: @accent;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 2px 4px;
+}
+
+.widget-title > button {
+    background-color: rgba(32, 28, 24, 0.85);
+    border: 1px solid @obwodka;
+    border-radius: 6px;
+    padding: 3px 12px;
+    color: @fg-dim;
+}
+
+.widget-title > button:hover {
+    background-color: rgba(143, 73, 53, 0.30);
+    color: @fg;
+}
+
+/* "Do not disturb" toggle */
+.widget-dnd {
+    padding: 4px;
+}
+
+.widget-dnd label {
+    color: @fg;
+}
+
+.widget-dnd switch {
+    background-color: rgba(85, 80, 74, 0.55);
+    border: 1px solid @obwodka;
+    border-radius: 12px;
+}
+
+/* Enabled DND glows old gold - it should be clear at a glance
+   that the bubbles are paused. */
+.widget-dnd switch:checked {
+    background-color: @accent;
+}
+
+.widget-dnd switch slider {
+    background-color: @fg;
+    border-radius: 10px;
+}
+
+/* ----- PLAYER IN THE PANEL ----- */
+.widget-mpris .widget-mpris-player {
+    background-color: @karta;
+    border: 1px solid @obwodka;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 4px 0;
+}
+
+.widget-mpris .widget-mpris-player .widget-mpris-title {
+    color: @fg;
+    font-weight: 700;
+}
+
+.widget-mpris .widget-mpris-player .widget-mpris-subtitle {
+    color: @fg-dim;
+}
+
+.widget-mpris > box > button {
+    background: transparent;
+    border: none;
+    color: @fg-dim;
+}
+
+.widget-mpris > box > button:hover {
+    color: @accent;
+}
+
+/* ----- NOTIFICATION GROUPS ----- */
+.notification-group {
+    margin: 2px 0;
+}
+
+.notification-group .notification-group-headers .notification-group-header {
+    color: @fg-dim;
+    font-size: 12px;
+    padding: 2px 8px;
+}
+
+.notification-group.critical .notification-group-headers .notification-group-header {
+    color: @zar;
+}

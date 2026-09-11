@@ -1,0 +1,105 @@
+#!/bin/bash
+# Screenshots under the Print key (see the SCREENSHOTS section in hyprland.lua).
+#
+#   zrzut-ekranu ekran    - the whole monitor                 (Print)
+#   zrzut-ekranu obszar   - a rectangle selected with the mouse (SHIFT+Print)
+#   zrzut-ekranu okno     - only the active window            (SUPER+Print)
+#
+# Two separate tools do the work underneath: grim takes the picture, and slurp
+# lets you select an area with the mouse. Both talk to the compositor over
+# Wayland, so they need to see the WAYLAND_DISPLAY variable - Hyprland sets it
+# itself for the programs it launches.
+
+set -u
+
+tryb="${1:-ekran}"
+
+# Notification language: df-jezyk next to the real script, then PATH;
+# English when neither exists.
+dfj="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/df-jezyk"
+[[ -x $dfj ]] || dfj="$(command -v df-jezyk 2>/dev/null)"
+jezyk=en
+[[ -z $dfj ]] || jezyk="$("$dfj" 2>/dev/null)"
+t() {  # $1 = English, $2 = Polish
+    if [[ $jezyk == pl ]]; then printf '%s' "$2"; else printf '%s' "$1"; fi
+}
+
+# <XDG Pictures>/Screenshots ("Zrzuty ekranu" in Polish).
+obrazy="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+[[ -z $obrazy || $obrazy == "$HOME" ]] && obrazy="$HOME/Pictures"
+KATALOG="$obrazy/$(t "Screenshots" "Zrzuty ekranu")"
+
+# notify-send without a notification daemon installed only hangs the
+# script on a D-Bus timeout, which is why every call is conditional.
+powiadom() {  # $1 = title, $2 = body, $3 = (optional) image in the popup
+    command -v notify-send >/dev/null 2>&1 || return 0
+    local aplikacja
+    aplikacja="$(t "Screenshot" "Zrzut ekranu")"
+    if [[ -n ${3:-} && -f ${3:-} ]]; then
+        notify-send -a "$aplikacja" -i "$3" "$1" "$2"
+    else
+        notify-send -a "$aplikacja" "$1" "$2"
+    fi
+}
+
+command -v grim >/dev/null 2>&1 || {
+    powiadom "$(t "Missing tool" "Brak narzędzia")" "$(t "grim was not found." "Nie znaleziono programu grim.")"
+    exit 1
+}
+
+mkdir -p "$KATALOG" || exit 1
+plik="$KATALOG/zrzut-$(date +%Y-%m-%d-%H%M%S).png"
+
+case $tryb in
+    ekran)
+        grim "$plik" || exit 1
+        opis="$(t "Entire screen" "Cały ekran")"
+        ;;
+
+    obszar)
+        command -v slurp >/dev/null 2>&1 || {
+            powiadom "$(t "Missing tool" "Brak narzędzia")" "$(t "slurp was not found." "Nie znaleziono programu slurp.")"
+            exit 1
+        }
+        # slurp exits with an error when you abort the selection with Escape
+        # or with a plain click without dragging. That is not a failure,
+        # just a cancellation - we exit silently, with no notification.
+        geometria=$(slurp 2>/dev/null) || exit 0
+        [[ -n $geometria ]] || exit 0
+        grim -g "$geometria" "$plik" || exit 1
+        opis="$(t "Selected area" "Zaznaczony obszar")"
+        ;;
+
+    okno)
+        # Hyprland reports the active window's position and size in JSON,
+        # and grim wants them in the "X,Y WxH" format.
+        okno=$(hyprctl -j activewindow 2>/dev/null) || okno=""
+        geometria=$(jq -r 'if .at then "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])" else empty end' <<< "$okno" 2>/dev/null)
+        if [[ -z $geometria ]]; then
+            powiadom "$(t "No active window" "Nie ma aktywnego okna")" \
+                     "$(t "A window screenshot needs a focused window." "Zrzut okna wymaga okna z fokusem.")"
+            exit 1
+        fi
+        grim -g "$geometria" "$plik" || exit 1
+        # Window title in the notification - makes it easier to tell later what the screenshot is.
+        tytul=$(jq -r '.title // ""' <<< "$okno" 2>/dev/null)
+        opis="$(t "Window: ${tytul:-untitled}" "Okno: ${tytul:-bez tytułu}")"
+        ;;
+
+    *)
+        echo "Usage: ${0##*/} {ekran|obszar|okno}" >&2
+        exit 2
+        ;;
+esac
+
+# To the clipboard, so it can be pasted without looking for the file. wl-copy
+# comes from the gui-apps/wl-clipboard package; without it the screenshot is
+# still on disk, so this is only a convenience, not a requirement.
+if command -v wl-copy >/dev/null 2>&1; then
+    wl-copy --type image/png < "$plik" &
+    schowek=" • $(t "copied to clipboard" "w schowku")"
+else
+    schowek=""
+fi
+
+powiadom "$opis" "${plik##*/}${schowek}" "$plik"

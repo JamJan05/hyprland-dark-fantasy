@@ -1,0 +1,13 @@
+# Hyprland dark-fantasy desktop
+gui-apps/waybar backlight network wifi mpris tray pipewire pulseaudio upower
+media-fonts/nerdfonts jetbrainsmono -nerdfontssymbolsonly
+gui-libs/gtk4-layer-shell introspection vala
+media-libs/libshumate vala
+gui-libs/xdg-desktop-portal-hyprland elogind
+
+# Quickshell stays on the ebuild's default USE flags - upstream recommends
+# keeping all of them enabled, and they are exactly what gives native PipeWire,
+# MPRIS, UPower, BlueZ and NetworkManager without any intermediary script.
+# The default "crash-handler" pulls in dev-cpp/cpptrace, which must be able to
+# unwind the stack. Portage asks for this flag itself - without it emerge stops on a USE conflict.
+>=dev-cpp/cpptrace-1.0.4-r1 unwind

@@ -1,0 +1,33 @@
+#!/bin/bash
+# Desktop file manager: yazi in a terminal - the Satchel tile and SUPER+W.
+#
+# Yazi is a TERMINAL program, so plain "yazi" will not open a window -
+# it needs a terminal emulator. This script exists so that the
+# configuration can say ONE word instead of "kitty -e yazi":
+#
+#   config/hypr/hyprland.lua       fileManager variable (SUPER+W shortcut)
+#   config/quickshell/.../shell.qml  Satchel tile
+#
+# A "kitty -e yazi" entry would fall apart on the spaces wherever a single
+# command is expected - in a key binding and in the Exec field of a .desktop
+# file. One word works in both places.
+#
+# A REGULAR TILED WINDOW, NOT A PANEL WINDOW
+#
+# For a while yazi opened like btop from the Status tile: a floating window
+# 70 x 70 % in the middle of the screen (class "df-panel"). Janek preferred it
+# to be a regular layout window, like the terminal - a file manager is a tool
+# for working alongside other windows, not a preview that closes after a moment.
+# Hence no --class and no panel.conf: yazi gets the look and placement of
+# a regular kitty.
+#
+# A path given as an argument opens as the starting directory.
+
+TERMINAL="${TERMINAL:-kitty}"
+
+# Without a terminal there is nothing to launch. Silently, because the script
+# is sometimes called from a menu and an error window would have nowhere to show.
+command -v "$TERMINAL" >/dev/null 2>&1 || exit 1
+command -v yazi >/dev/null 2>&1 || exit 1
+
+exec "$TERMINAL" -e yazi "$@"

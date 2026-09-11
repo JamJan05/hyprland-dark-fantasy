@@ -1,0 +1,13 @@
+[SddmGreeterTheme]
+Name=Dark Fantasy
+Description=A dark login theme in old gold and ember, matching the Hyprland dark fantasy desktop
+Author=JamJan05
+License=MIT
+Type=sddm-theme
+Version=1.0
+Website=https://github.com/JamJan05/Hyprland-Dark-Fantasy
+Screenshot=
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=
+QtVersion=6

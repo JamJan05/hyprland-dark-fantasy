@@ -1,0 +1,10 @@
+#!/bin/bash
+# Prints the interface language chosen in Cogwheel -> Language: "en" (the
+# default, also when the shell has never run) or "pl". For Waybar modules,
+# hyprlock cmd[] labels and scripts that show text.
+plik="${XDG_STATE_HOME:-$HOME/.local/state}/dark-fantasy/powloka.json"
+if [[ -r $plik ]] && grep -Eq '"jezyk"[[:space:]]*:[[:space:]]*"pl"' "$plik"; then
+    echo pl
+else
+    echo en
+fi

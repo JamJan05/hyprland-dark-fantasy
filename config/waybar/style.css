@@ -1,0 +1,366 @@
+/* -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+   WAYBAR LOOK - three dark frames over the wallpaper.
+   Dark-fantasy palette: near-black background, old gold,
+   the colors of ember and cold iron.
+   The bar's content (modules) is in the config.jsonc file next to it.
+
+   SHARP RECTANGLES. There is not a single rounded corner
+   in the whole file - just like the Hyprland windows, the Quickshell
+   shell, hyprlock and SDDM. The frame is 1 px of faded
+   gold; whatever is active gets 1 px of full gold.
+
+   The background blur under the bar is NOT set here - it is done
+   by a layer rule in ~/.config/hypr/hyprland.lua
+   (hl.layer_rule with namespace "waybar"), together with the grain
+   (decoration:blur:noise). CSS in GTK has no way to blur
+   what is underneath the window.
+   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
+
+/* ----- PALETTE -----
+   MIRRORS Theme.qml (config/quickshell/dark-fantasy). Changing a color
+   here requires changing it there - otherwise the shell's panels and HUD
+   will visually come apart from the bar. */
+@define-color bg        rgba(11, 11, 12, 0.88);    /* background #0b0b0c, Theme.barOpacity */
+@define-color bg-hover  rgba(32, 28, 24, 0.96);    /* surface-alt #201c18 */
+@define-color fg        #d7d0c5;                   /* text */
+@define-color fg-dim    #81786b;                   /* muted - dimmed text */
+@define-color accent    #b19a67;                   /* gold - accent, active */
+@define-color red       #8f4935;                   /* ember - alarm ONLY */
+@define-color zelazo    #55504a;                   /* iron - disabled states */
+
+/* Frame border: 1 px of old gold at 20 % opacity (Theme.border). It should be
+   barely visible - hinting at the edge of wrought metal rather than drawing a frame. */
+@define-color obwodka   rgba(177, 154, 103, 0.20);
+
+/* ----- DIMENSIONS -----
+   MIRRORS Theme.qml: barHeight 38, barMarginTop 6, barMarginSide 12.
+   The same numbers are in config.jsonc ("height", "margin-top", "margin-left",
+   "margin-right"), because the layer size is set by Waybar, not by CSS. Here
+   we only make sure the frames fill the layer - see "FRAMES". */
+
+/* ----- COMMON SETTINGS -----
+   Mono typeface for numbers and values (clock, percentages, temperature) - the
+   icon glyphs come from it too. Labels (date, track title) get
+   EB Garamond in small caps further down. */
+* {
+    /* The first font in the list that exists on the system wins.
+       The icons come from "Symbols Nerd Font". */
+    font-family: "JetBrainsMono Nerd Font", "Hack Nerd Font",
+                 "Symbols Nerd Font", "Noto Sans", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 0;      /* without this GTK stretches the bar vertically */
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+/* The bar itself is invisible - only the frames on it can be seen. */
+window#waybar {
+    background: transparent;
+    color: @fg;
+}
+
+/* ----- FRAMES -----
+   Whole module groups get the background and border, so the left, center and
+   right sides read as three frames, not as loose icons.
+
+   NO vertical margin. There used to be "margin: 3px 0" here, which made the frame
+   32 px tall on a 38 px layer. The left corner with the Quickshell HUD is EXACTLY
+   as tall as the bar frames, and three stat bars with a row of desktops do not
+   fit in 32 px - so the frames now fill the whole layer, and the shell's panels
+   compute their position from the same edge
+   (Theme.panelMarginTop = 44). */
+.modules-center,
+.modules-right {
+    background-color: @bg;
+    border: 1px solid @obwodka;
+    border-radius: 0;
+    margin: 0;
+    padding: 0 4px;
+}
+
+/* ----- LEFT SIDE -----
+   The left corner is taken by the Quickshell shell HUD - a separate layer window
+   above the bar, with the same height and border as the frames. So the module
+   group on the left does not draw its own frame (it would lie under the HUD and
+   show through its translucent background), and the window title gets a frame
+   of its own.
+
+   428 px = MIRRORS Theme.hudWidth (420) + 8 px gap between the HUD
+   and the title frame. */
+.modules-left {
+    background-color: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+#window {
+    margin-left: 428px;
+    padding: 0 12px;
+    background-color: @bg;
+    border: 1px solid @obwodka;
+    color: @fg-dim;
+    font-weight: 500;
+}
+
+/* Empty desktop = no title = no frame. The margin stays, but without the background
+   and border nothing of it is visible. */
+window#waybar.empty #window {
+    padding: 0;
+    background-color: transparent;
+    border: none;
+}
+
+/* ----- MODULES ----- */
+#image,
+#custom-odtwarzacz,
+#custom-media-wstecz,
+#custom-media-play,
+#custom-media-dalej,
+#network,
+#custom-temperatura,
+#clock,
+#custom-data,
+#tray,
+#custom-zasoby,
+#bluetooth {
+    padding: 0 10px;
+    margin: 3px 2px;
+    color: @fg;
+    transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* A little slack at the right edge of the frame. The last module used to be the
+   session, then the cogwheel; since stage 7 of the rebuild (settings moved under
+   the Cogwheel tile) it is the tray. */
+#tray {
+    padding-right: 12px;
+}
+
+/* Highlight of the module under the cursor - a clear sign it can be clicked. */
+#image:hover,
+#custom-odtwarzacz:hover,
+#custom-media-wstecz:hover,
+#custom-media-play:hover,
+#custom-media-dalej:hover,
+#network:hover,
+#custom-temperatura:hover,
+#clock:hover,
+#tray:hover,
+#custom-zasoby:hover,
+#bluetooth:hover {
+    background-color: @bg-hover;
+}
+
+/* A pressed module brightens for a moment - a stand-in for a "click". */
+#custom-odtwarzacz:active,
+#network:active,
+#clock:active {
+    background-color: rgba(215, 208, 197, 0.08);
+}
+
+/* ----- "NOW" FRAME (center) -----
+
+       22:50  ·  Friday, 11 September │ ▪ title  ·  artist
+
+   Two zones in one frame. The frame MUST NOT change width -
+   the clock has to stay put when you turn music on and off. Three things
+   ensure this: the player script always prints something ("cisza"), the cover
+   art shows an empty slot during silence, and the title zone has a fixed min-width. */
+
+/* Clock - mono typeface, fixed-width digits. A small right margin:
+   the date should hug the time, not stand apart like a separate module. */
+#clock.czas {
+    font-size: 14px;
+    padding-right: 2px;
+}
+
+/* Date: EB Garamond in small caps, letter-spaced, dimmed.
+
+   SMALL CAPS FROM THE "EB Garamond SC" FAMILY, NOT VIA font-variant.
+   GTK renders text with Pango, and for small-caps Pango enables the typeface's
+   "smcp" feature - in EB Garamond 0.016 that feature has no letter "ł" and Pango
+   draws a blank in its place ("Popió  pamięta"). The separate SC family from the
+   same package has a small-caps "ł" drawn directly. Verified with
+   pango-view on both variants.
+
+   Fallback: regular EB Garamond (no small caps, but with "ł"), then any
+   serif. */
+#custom-data {
+    padding-left: 0;
+    padding-right: 14px;
+    color: @fg-dim;
+    font-family: "EB Garamond SC", "EB Garamond", serif;
+    font-size: 16px;
+    font-weight: normal;     /* the package has only the regular weight */
+    letter-spacing: 1.5px;
+    /* Lining figures. EB Garamond draws old-style figures by default,
+       and in small caps "11" then looks like the Roman "II" - the date
+       read "piątek, II września". */
+    font-feature-settings: "lnum";
+}
+
+/* Vertical 1 px line between the time zone and the player zone. It is drawn
+   by the left edge of the cover art; zero margin, so the line runs the full
+   height of the frame instead of hanging in mid-air. */
+#image.okladka {
+    border-left: 1px solid @obwodka;
+    margin: 0;
+    padding: 0 6px 0 12px;
+}
+
+/* Title and artist. min-width fits 28 characters (max-length in config.jsonc)
+   of letter-spaced 16 px small caps - a shorter title and "cisza" do not
+   narrow the frame. */
+#custom-odtwarzacz {
+    min-width: 270px;
+    padding-left: 4px;
+    /* SC family instead of font-variant - "ł" in titles, see #custom-data. */
+    font-family: "EB Garamond SC", "EB Garamond", serif;
+    font-size: 16px;
+    font-weight: normal;
+    letter-spacing: 1.5px;
+    font-feature-settings: "lnum";   /* digits in titles - see #custom-data */
+}
+
+/* Pause dims, silence drops to cold iron - the same gradation
+   as disabled Bluetooth and no network. */
+#custom-odtwarzacz.pauza {
+    color: @fg-dim;
+}
+
+#custom-odtwarzacz.cisza {
+    color: @zelazo;
+}
+
+/* Buttons sliding out from under the track title. Narrower than the other
+   modules - they are meant to be a compact remote, not three more buttons. */
+#custom-media-wstecz,
+#custom-media-play,
+#custom-media-dalej {
+    padding: 0 7px;
+    margin: 3px 1px;
+    font-size: 15px;
+    color: @fg-dim;
+}
+
+#custom-media-wstecz:hover,
+#custom-media-play:hover,
+#custom-media-dalej:hover {
+    color: @fg;
+}
+
+/* The middle button - pause/resume - is the one aimed at most often,
+   so it glows brighter than the arrows next to it from the start. */
+#custom-media-play {
+    color: @fg;
+    font-size: 16px;
+}
+
+#custom-media-play:hover {
+    color: @accent;
+}
+
+/* Player drawer: the "group/media" group with the "drawer" key holds
+   the title, and on mouse hover slides the buttons out from under it. */
+#media {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+}
+
+/* Class added to the modules tucked away in the drawer (children-class).
+   Without a side margin the buttons do not "jump" while sliding out. */
+.w-szufladzie {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* ----- RIGHT FRAME ----- */
+
+/* Tray: icons of "sleeping" applications are dimmed, and those calling
+   for attention - highlighted. */
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: rgba(143, 73, 53, 0.26);
+}
+
+/* Alarm states - the icon color is set in config.jsonc, here only background/blinking. */
+#custom-temperatura.critical {
+    color: @red;
+}
+
+/* Critical battery as numbers instead of bars - the same rule as
+   the old #battery.critical. The class is set by hud/Hud.qml. */
+#custom-zasoby.krytyczna {
+    color: @red;
+    animation: mruganie 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes mruganie {
+    to { background-color: rgba(143, 73, 53, 0.26); }
+}
+
+/* ----- TOOLTIPS ----- */
+tooltip {
+    background-color: rgba(11, 11, 12, 0.97);
+    border: 1px solid @obwodka;
+    border-radius: 0;
+}
+
+tooltip label {
+    color: @fg;
+    padding: 4px;
+}
+
+/* ----- CONTEXT MENUS -----
+   Applies to the icon menus in the tray (right click on a tray icon). GTK draws
+   them as separate windows, so the module rules do not reach them - the styles
+   have to be given here. Formerly also the session menu (menu-sesja.xml, now deleted). */
+menu {
+    background-color: rgba(11, 11, 12, 0.98);
+    border: 1px solid @obwodka;
+    border-radius: 0;
+    padding: 6px;
+    color: @fg;
+}
+
+menu menuitem {
+    min-height: 26px;
+    padding: 4px 16px;
+    border-radius: 0;
+    color: @fg;
+    transition: background-color 150ms ease;
+}
+
+menu menuitem:hover {
+    background-color: @bg-hover;
+    color: @fg;
+}
+
+menu separator {
+    min-height: 1px;
+    margin: 5px 8px;
+    background-color: rgba(177, 154, 103, 0.18);
+}
+
+/* ----- BLUETOOTH ----- */
+#bluetooth.connected {
+    background-color: rgba(177, 154, 103, 0.16);
+}
+
+/* A disabled controller should not catch the eye. */
+#bluetooth.off,
+#bluetooth.disabled {
+    color: @zelazo;
+}
+
+/* Note: GTK3 does not know the :empty pseudo-class, so an empty tray cannot
+   be hidden from CSS - Waybar collapses it to zero width anyway. */

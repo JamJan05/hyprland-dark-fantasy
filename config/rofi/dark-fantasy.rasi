@@ -1,0 +1,111 @@
+/* -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+   ROFI THEME - dark-fantasy palette.
+
+   Used ONLY as the clipboard history picker
+   (SUPER+SHIFT+V, see hyprland.lua). Rofi is not the
+   application launcher here - that is the shell's menu (SUPER+R).
+
+   rofi 1.7.x .rasi syntax. Note: rofi-wayland requires
+   the "-modes"/"-dmenu" switch; the theme by itself does not
+   launch anything.
+   -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
+
+* {
+    tlo:         #0b0b0cee;
+    tlo-alt:     #151311ff;
+    tekst:       #d7d0c5ff;
+    przygaszony: #81786bff;
+    zloto:       #b19a67ff;
+    zar:         #8f4935ff;
+    zelazo:      #55504aff;
+    obwodka:     #b19a6738;
+
+    background-color: transparent;
+    text-color:       @tekst;
+    font:             "JetBrainsMono Nerd Font 11";
+}
+
+window {
+    background-color: @tlo;
+    border:           1px;
+    border-color:     @obwodka;
+    /* Sharp corners - like the bar, the shell and Hyprland's windows. */
+    border-radius:    0;
+    width:            640px;
+    padding:          0;
+}
+
+mainbox {
+    padding:  10px;
+    children: [ inputbar, message, listview ];
+    spacing:  8px;
+}
+
+/* ----- SEARCH BAR ----- */
+inputbar {
+    background-color: @tlo-alt;
+    border:           1px;
+    border-color:     @obwodka;
+    border-radius:    0;
+    padding:          8px 10px;
+    spacing:          8px;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    text-color: @zloto;
+}
+
+entry {
+    placeholder:            "search the clipboard...";
+    placeholder-color:      @zelazo;
+    cursor:                 text;
+}
+
+/* ----- ENTRY LIST ----- */
+listview {
+    lines:         12;
+    columns:       1;
+    fixed-height:  false;
+    scrollbar:     false;
+    spacing:       2px;
+}
+
+element {
+    padding:       7px 10px;
+    border-radius: 0;
+}
+
+element normal.normal {
+    text-color: @tekst;
+}
+
+/* Selected entry: gold background and a thin gold border drawn inward.
+   The background alone is not contrasting enough with this palette. */
+element selected.normal {
+    background-color: #b19a672b;
+    border:           1px;
+    border-color:     @zloto;
+    text-color:       @tekst;
+}
+
+element alternate.normal {
+    text-color: @tekst;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    vertical-align:   0.5;
+}
+
+/* ----- MESSAGES (e.g. no results) ----- */
+message {
+    padding:          8px;
+    border-radius:    0;
+    background-color: @tlo-alt;
+}
+
+textbox {
+    text-color: @przygaszony;
+}

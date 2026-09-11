@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+#
+# limit-ladowania - the threshold at which the laptop battery stops charging.
+#
+#   limit-ladowania        prints "start end writable", e.g. "70 75 1"
+#                          (start "-" when the battery has no start threshold)
+#   limit-ladowania 75     charges to 75 %, charging resumes below 70 %
+#
+# Called by Cogwheel (services/Ladowanie.qml), but it also works from a terminal.
+#
+# FILES. The kernel exposes the thresholds in /sys/class/power_supply/BAT*/ as
+# charge_control_end_threshold and charge_control_start_threshold - on
+# a ThinkPad the thinkpad_acpi driver does this. Other laptops have the same
+# interface, so the script does not check the vendor, only that the files exist.
+#
+# START = LIMIT - 5. With the start just below the end, the battery would top
+# up by a percent every few minutes; five points is the ThinkPad factory setting
+# (95 / 100).
+#
+# WRITE ORDER. thinkpad_acpi rejects an end lower than the current start
+# and a start higher than the current end (EINVAL). So when lowering the limit
+# the start must go down first, and when raising it - the end must go up first.
+#
+# PERMISSIONS. The files belong to root. With the udev rule
+# (udev/99-dark-fantasy-bateria.rules) the wheel group writes to them directly;
+# without it the script re-runs itself via pkexec, and the polkit agent asks
+# for the password. LIMIT_BEZ_PKEXEC=1 disables that path - the shell restores
+# the limit at session start only silently, without a password window.
+#
+# BATERIA=/path replaces the battery directory - for tests on plain files.
+
+set -euo pipefail
+
+# Errors are shown verbatim in Cogwheel -> Power, so they follow the interface
+# language: df-jezyk next to the real script, then PATH; English without it.
+# Resolved only when there is an error to print.
+blad() {  # $1 = English, $2 = Polish
+    local jezyk=en dfj
+    dfj="$(dirname "$(readlink -f "$0")")/df-jezyk"
+    [[ -x $dfj ]] || dfj="$(command -v df-jezyk || true)"
+    [[ -z $dfj ]] || jezyk="$("$dfj" 2>/dev/null || true)"
+    if [[ $jezyk == pl ]]; then echo "$2" >&2; else echo "$1" >&2; fi
+}
+
+BAT="${BATERIA:-$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -n1 || true)}"
+START="$BAT/charge_control_start_threshold"
+KONIEC="$BAT/charge_control_end_threshold"
+
+if [[ -z "$BAT" || ! -e "$KONIEC" ]]; then
+    blad "the battery has no charge threshold (charge_control_end_threshold)" \
+         "bateria nie ma progu ładowania (charge_control_end_threshold)"
+    exit 2
+fi
+
+if [[ $# -eq 0 ]]; then
+    s="-"; [[ -e "$START" ]] && s="$(<"$START")"
+    w=0; [[ -w "$KONIEC" ]] && w=1
+    echo "$s $(<"$KONIEC") $w"
+    exit 0
+fi
+
+n="$1"
+if ! [[ "$n" =~ ^[0-9]+$ ]] || (( n < 50 || n > 100 )); then
+    blad "the limit must be a number from 50 to 100" \
+         "limit musi być liczbą od 50 do 100"
+    exit 2
+fi
+s=$(( n - 5 ))
+
+if [[ ! -w "$KONIEC" ]]; then
+    if [[ $EUID -ne 0 && -z "${LIMIT_BEZ_PKEXEC:-}" ]] && command -v pkexec >/dev/null; then
+        # pkexec clears the environment and requires an absolute path.
+        exec pkexec "$(readlink -f "$0")" "$n"
+    fi
+    blad "no write permission for $KONIEC (udev rule: udev/99-dark-fantasy-bateria.rules)" \
+         "brak prawa zapisu do $KONIEC (reguła udev: udev/99-dark-fantasy-bateria.rules)"
+    exit 3
+fi
+
+if [[ -e "$START" ]]; then
+    if (( n < $(<"$START") )); then
+        echo "$s" > "$START"
+        echo "$n" > "$KONIEC"
+    else
+        echo "$n" > "$KONIEC"
+        echo "$s" > "$START"
+    fi
+else
+    echo "$n" > "$KONIEC"
+fi
+echo "$s $n"

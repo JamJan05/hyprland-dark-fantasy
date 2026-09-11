@@ -1,0 +1,383 @@
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+// WAYBAR CONFIGURATION - three sharp frames.            --
+// The look (colors, rounding, spacing) lives in the      --
+// style.css file next to it. This is the bar's CONTENT:  --
+// which modules, in what order and what they print.      --
+// -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+{
+    // ----- BAR GEOMETRY -----
+    "layer": "top",        // bar above windows (but below menus/popup windows)
+    "position": "top",     // at the top of the screen
+    //
+    // Height and margins MIRROR Theme.qml (barHeight, barMarginTop,
+    // barMarginSide in config/quickshell/dark-fantasy). The Quickshell HUD
+    // in the left corner has exactly the same height and margin as the bar
+    // frames, so a change here requires a change there.
+    "height": 38,          // height of the whole bar in pixels
+    "spacing": 0,          // spacing between modules is done in CSS, not here
+    "margin-top": 6,       // offset from the top edge of the screen
+    "margin-left": 12,     // offset from the left edge
+    "margin-right": 12,    // offset from the right edge
+
+    // ----- WHAT GOES WHERE -----
+    // Three groups = three "pills" visible on the bar.
+    //
+    // Volume and brightness are NOT on the bar. They are in Cogwheel - a menu
+    // tile at the bottom of the screen (SUPER+U).
+    // Media keys work as they always did: hyprland.lua handles them,
+    // not the bar.
+    //
+    // "group/media" is a DRAWER: normally only the track title is visible,
+    // and on mouse hover the skip buttons slide out next to it.
+    // THE LEFT CORNER IS TAKEN BY THE QUICKSHELL SHELL HUD (hud/Hud.qml): the
+    // floor emblem, three stat bars and a row of desktops. It is a separate layer
+    // window, at the same height as the bar, placed above it. Waybar leaves room
+    // for it: the window title is offset by the HUD width (margin-left of #window
+    // in style.css).
+    //
+    // The floor and desktops once stood here as custom modules fed by files
+    // from floors.lua. Today the HUD shows them, and the modules and files are gone.
+    "modules-left": [
+        "hyprland/window"
+    ],
+    // "NOW" FRAME - one frame, two zones separated by a 1 px line:
+    //
+    //     22:50  ·  Friday, 11 September │ ▪ title  ·  artist
+    //
+    // The frame MUST NOT change width, because the clock has to stay put.
+    // Hence custom/odtwarzacz instead of the built-in mpris, and cover art that
+    // shows an empty slot during silence instead of disappearing. Details at
+    // the modules themselves.
+    "modules-center": [
+        "clock#czas",             // HH:MM, mono typeface
+        "custom/data",            // ·  weekday and date, Garamond small caps
+        "image#okladka",          // desaturated cover art or an empty slot
+        "group/media"             // title + sliding skip buttons
+    ],
+
+    // The clock moved to the center. The power profile, idle inhibitor,
+    // notification bell, cogwheel and session menu left the bar - their
+    // functions have tiles at the bottom of the screen: Cogwheel (power profile,
+    // idle inhibitor, settings), Tidings (notification history with a counter
+    // in the corner of the tile) and Bonfire (lock, suspend, log out, restart,
+    // power off).
+    //
+    // CPU, memory and battery as numbers are here ONLY when the HUD bars are
+    // disabled (custom/zasoby) - when they are enabled, the bars in the left
+    // corner show them and the numbers would be a duplicate.
+    "modules-right": [
+        "custom/zasoby",          // CPU, RAM, battery - when the HUD bars are disabled
+        "custom/temperatura",
+        "network",
+        "bluetooth",
+        "tray"
+    ],
+
+
+    // ============ DRAWERS ============
+    // A group with the "drawer" key hides all its modules except the first.
+    // The first element is the "group leader" - it is always visible, and the
+    // rest slide out from under it on mouse hover (or on click, if you
+    // set "click-to-reveal": true).
+    //
+    // "children-class" is the name of the CSS class added to the hidden modules -
+    // it lets style.css know what is tucked away in the drawer.
+
+    // Player: the bar shows the track title, and on mouse hover the skip
+    // and pause buttons slide out to the right. The group leader is
+    // custom/odtwarzacz - see the "now" frame below.
+    "group/media": {
+        "orientation": "inherit",
+        "drawer": {
+            "transition-duration": 300,
+            "children-class": "w-szufladzie",
+            "transition-left-to-right": true
+        },
+        "modules": [
+            "custom/odtwarzacz",
+            "custom/media-wstecz",
+            "custom/media-play",
+            "custom/media-dalej"
+        ]
+    },
+
+
+    // ============ MODULES ============
+
+    // Title of the active window (left pill).
+    "hyprland/window": {
+        // Waybar 0.14.0 prints a warning at startup
+        //   [warning] 'swap-icon-label' must be a bool.
+        // when this key is ABSENT - it then reads an empty value instead of
+        // skipping the option. Tracked down by running waybar with a minimal
+        // config containing only this one module. We set it explicitly to keep
+        // the log clean. false = icon before label (the default layout).
+        "swap-icon-label": false,
+        "format": "{title}",
+        // 26 characters, not 60 as before. The title starts only after the
+        // HUD (428 px from the left), and the "now" frame in the middle of the
+        // bar sits approx. 660 px from the left - a longer title would run under
+        // the clock.
+        "max-length": 26,          // longer titles are truncated
+        "separate-outputs": true,  // each monitor shows the title of its own window
+        // Shortening overly verbose titles - add your own rules here:
+        "rewrite": {
+            "(.*) — Mozilla Firefox": "󰈹 $1",
+            "(.*) - Brave": "󰖟 $1"
+        }
+    },
+
+    // ============ NEW MODULES ============
+
+    // CPU, memory and battery as NUMBERS - only when the HUD bars are
+    // disabled (Cogwheel or "qs ipc call hud przelaczPaski"). When the bars
+    // are enabled, the shell returns empty text and the module disappears from the bar.
+    //
+    // The values are computed by the shell (services/Cpu.qml, Memory.qml,
+    // Battery.qml) - the same ones it draws the bars from - so the number on the
+    // bar and the bar in the corner cannot differ. The built-in cpu, memory and
+    // battery modules used to be here.
+    //
+    // NO "interval", only "signal". Man waybar-custom: "If a signal is
+    // defined then the script will run once on startup and will only update
+    // with a signal". Writing "interval": 0 is NOT the same as omitting the key -
+    // Waybar then reads zero and the module stops refreshing on the signal.
+    // The shell sends SIGRTMIN+11 when the bars are toggled and every 5 s while
+    // the bars are disabled. When they are enabled it sends nothing, so the
+    // module costs nothing. The signal number must match hud/Hud.qml.
+    "custom/zasoby": {
+        "exec": "qs -c dark-fantasy ipc call hud liczby",
+        "return-type": "json",
+        "signal": 11
+    },
+
+    // Bluetooth.
+    //
+    // NOTE: on this system the controller (hci0) is present, but the bluetooth
+    // service is not running and is not in the runlevel - the module will show
+    // the "disabled" state. To get it going:
+    //
+    //     sudo rc-service bluetooth start
+    //     sudo rc-update add bluetooth default
+    //
+    // A click opens the device manager in a terminal (bluetoothctl
+    // is part of net-wireless/bluez, which you already have).
+    "bluetooth": {
+        "format":              "<span color='#81786b'>󰂯</span>",
+        "format-disabled":     "<span color='#55504a'>󰂲</span>",
+        "format-off":          "<span color='#55504a'>󰂲</span>",
+        "format-connected":    "<span color='#b19a67'>󰂱</span> {num_connections}",
+        "tooltip-format":              "Bluetooth: {status}\n{controller_alias}",
+        "tooltip-format-connected":    "Bluetooth: {status}\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
+
+        // Left click slides out the quick Bluetooth panel from under the icon
+        // (Quickshell): power toggle, device list, one-click connecting,
+        // headphone battery level.
+        //
+        // Right click stays as a fallback - bluetoothctl can do things
+        // the panel deliberately does not: pairing with a PIN code, trust,
+        // blocking, agent mode.
+        "on-click":       "qs -c dark-fantasy ipc call quick toggle bluetooth",
+        "on-click-right": "kitty -e bluetoothctl"
+    },
+
+    // ============ "NOW" FRAME ============
+
+    // Clock: HH:MM in the mono typeface, without seconds.
+    //
+    // Mouse hover shows a calendar; the wheel over it scrolls the months,
+    // RMB toggles month <-> year. The old "format-alt" (date on click)
+    // is gone - the module next to it shows the date all the time.
+    //
+    // Today in the calendar is gold, not ember-colored: in this theme ember
+    // means only an alarm, and today's date is not one.
+    "clock#czas": {
+        "interval": 60,
+        "format": "{:%H:%M}",
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "format": {
+                "months":  "<span color='#d7d0c5'><b>{}</b></span>",
+                "days":    "<span color='#81786b'>{}</span>",
+                "weekdays":"<span color='#55504a'><b>{}</b></span>",
+                "today":   "<span color='#b19a67'><b>{}</b></span>"
+            }
+        },
+        "actions": {
+            "on-click-right": "mode",        // RMB toggles month <-> year
+            "on-scroll-up":   "shift_up",    // the wheel scrolls the calendar
+            "on-scroll-down": "shift_down"
+        }
+    },
+
+    // Date next to the clock: "·  Friday, 11 September" / "·  piątek, 11 września"
+    // - Garamond small caps in a dimmed color (the typeface and color are set
+    // in style.css).
+    //
+    // A separate "custom" module, not a second "clock": the day of the month
+    // must have no leading zero ("1 September", not "01 September"). Waybar
+    // formats dates with std::chrono specifiers, which lack GNU's "%-d";
+    // the date command has it. The local/bin/waybar-data script picks the locale
+    // by the shell language (df-jezyk), not by the system locale.
+    //
+    // interval 60 - the date changes once a day, a minute's delay
+    // at midnight does not matter.
+    //
+    // "signal": 12 - a language change in Cogwheel sends SIGRTMIN+12. With
+    // "interval" present this is SAFE (unlike in custom/zasoby):
+    // Waybar 0.14 then picks a loop with a delay (delayWorker), and the signal
+    // only interrupts its sleep, so the module refreshes right away and keeps
+    // ticking every minute (src/modules/custom.cpp).
+    "custom/data": {
+        "exec": "$HOME/.local/bin/waybar-data",
+        "interval": 60,
+        "signal": 12,
+        "format": "·  {}",
+        "tooltip": false
+    },
+
+    // Cover art at the start of the player zone. It is separated from the clock
+    // by a vertical 1 px line - the left edge of this module in style.css.
+    //
+    // Waybar shows an image only from a file on disk, and players provide
+    // the cover art as an address (Spotify - an http link). The script downloads
+    // it, turns it into a desaturated engraving with a vignette and returns the
+    // path. When nothing plays, it returns an empty dark slot of the same size -
+    // the module does not disappear, so the frame does not change width.
+    "image#okladka": {
+        "exec": "$HOME/.local/bin/waybar-okladka",
+        "size": 24,
+        "interval": 3,
+        "tooltip": false,
+        // The cover art opens the same panel as the title next to it.
+        "on-click": "qs -c dark-fantasy ipc call media toggle"
+    },
+
+    // Title and artist, in Garamond small caps.
+    //
+    // The built-in "mpris" module used to be here. It vanished from the bar when
+    // nothing was playing - the frame then shrank by a whole zone, and the clock
+    // jumped sideways. The local/bin/waybar-odtwarzacz script listens to
+    // "playerctl --follow" and prints "cisza" during silence, so the module
+    // is always there.
+    //
+    // NO "interval": the script writes a new line on every change of track
+    // or state, and Waybar reads them live. The zone width is held by
+    // min-width in style.css, and max-length cuts longer titles with an ellipsis.
+    // "align": 0 pushes a short title against the cover art instead of centering
+    // it in the empty zone.
+    //
+    // The colored player icons (the Spotify note, the browser's little screen)
+    // went away together with "mpris" - in the small-caps label they would be the
+    // only colored glyphs in the middle of the bar. The player panel tells who
+    // is playing.
+    //
+    //   left click   = player panel (Quickshell)
+    //   mouse hover  = the buttons slide out (see "group/media" above)
+    "custom/odtwarzacz": {
+        "exec": "$HOME/.local/bin/waybar-odtwarzacz",
+        "return-type": "json",
+        "max-length": 28,
+        "align": 0,
+        "on-click": "qs -c dark-fantasy ipc call media toggle"
+    },
+
+    // Buttons sliding out from under the track title. These are plain "custom"
+    // modules with no data source of their own - all they do is an icon and
+    // a command on click. The playback state is visible from the title color
+    // in custom/odtwarzacz (dimmed on pause), so the middle button is a plain
+    // toggle and does not need to change.
+    "custom/media-wstecz": {
+        "format": "󰒮",
+        "tooltip": false,
+        "on-click": "playerctl previous"
+    },
+
+    "custom/media-play": {
+        "format": "󰐎",
+        "tooltip": false,
+        "on-click": "playerctl play-pause"
+    },
+
+    "custom/media-dalej": {
+        "format": "󰒭",
+        "tooltip": false,
+        "on-click": "playerctl next"
+    },
+
+    // VOLUME AND BRIGHTNESS - NO LONGER HERE.
+    //
+    // The "backlight" and "pulseaudio" modules and both their sliders moved
+    // to the Quickshell shell - today they are in Cogwheel (Sound, Display). The
+    // bar showed them as percentages with a slide-out slider; the panel shows
+    // the same plus the microphone and device selection, so keeping both
+    // would mean two ways of changing the same thing.
+    //
+    // The XF86Audio* and XF86MonBrightness* keys are handled by hyprland.lua,
+    // not by the bar, so they work exactly as before. The change is
+    // confirmed by the OSD at the bottom of the screen.
+    //
+    // The old sound panel went away together with the modules
+    // (waybar-panel-audio, panel-audio.css, menu-audio.xml): the separate
+    // slider for each application is now a list of programs
+    // in Cogwheel (Sound) and takes its data straight from PipeWire.
+    //
+    // Cogwheel is opened by a tile in the tile menu or by the SUPER+U shortcut.
+
+    // Network: Wi-Fi shows the signal strength in percent.
+    "network": {
+        "interval": 5,
+        "format-wifi": "<span color='#b19a67'>{icon}</span> {signalStrength}%",
+        "format-ethernet": "<span color='#b19a67'>󰈀</span> LAN",
+        "format-linked": "<span color='#b19a67'>󰈀</span> {ifname}",
+        // Just the crossed-out icon, no word - the built-in network module does
+        // not refresh on a signal, so a label would not follow the language.
+        "format-disconnected": "<span color='#55504a'>󰖪</span>",
+        "format-icons": ["󰤟", "󰤢", "󰤥", "󰤨"],
+        "tooltip-format-wifi": "{essid}\n{ipaddr}\n↓ {bandwidthDownBits}  ↑ {bandwidthUpBits}",
+        "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
+
+        // Left click slides out the quick network panel from under the icon
+        // (Quickshell): Wi-Fi toggle, network list, connecting with a password field.
+        //
+        // Right click stays as nmtui - and not just out of habit.
+        // The panel connects only with a password (WPA/WPA2/WPA3-PSK), because
+        // that is all connectWithPsk accepts. Corporate networks with EAP require
+        // certificates and a choice of method, i.e. the full NetworkManager
+        // form - and the row in the panel points straight here.
+        "on-click":       "qs -c dark-fantasy ipc call quick toggle wifi",
+        "on-click-right": "kitty -e nmtui"
+    },
+
+    // CPU temperature, plus in the tooltip the CPU load, memory usage
+    // and the state of the integrated graphics. The built-in "temperature" module
+    // cannot do that - its tooltip knows only the temperature itself - which is
+    // why a script gathers the data and hands it to Waybar as JSON.
+    //
+    // "signal": 12 alongside "interval" - after a language change the tooltip
+    // switches to the new language right away, not after 3 s (see custom/data).
+    "custom/temperatura": {
+        "exec": "$HOME/.local/bin/waybar-temperatura",
+        "return-type": "json",
+        "interval": 3,
+        "signal": 12,
+        "tooltip": true
+    },
+
+    // The CLOCK moved to the "now" frame in the middle of the bar - see
+    // "clock#czas" above.
+
+    // System tray - icons of applications running in the background
+    // (messengers, cloud clients, etc.). Each icon has its own right-click
+    // menu - that menu is drawn by the application itself, not by Waybar.
+    //
+    // Waybar is built with USE="tray", so the module works and is
+    // in the modules-right list.
+    "tray": {
+        "icon-size": 16,
+        "spacing": 8,
+        "show-passive-items": true
+    }
+}
