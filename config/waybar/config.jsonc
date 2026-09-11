@@ -44,14 +44,13 @@
     //
     //     22:50  ·  Friday, 11 September │ ▪ title  ·  artist
     //
-    // The frame MUST NOT change width, because the clock has to stay put.
-    // Hence custom/odtwarzacz instead of the built-in mpris, and cover art that
-    // shows an empty slot during silence instead of disappearing. Details at
-    // the modules themselves.
+    // The player zone (cover art + title) appears only while some application
+    // is playing - with no player both modules hide and the frame shrinks to
+    // the clock and the date. Details at the modules themselves.
     "modules-center": [
         "clock#czas",             // HH:MM, mono typeface
         "custom/data",            // ·  weekday and date, Garamond small caps
-        "image#okladka",          // desaturated cover art or an empty slot
+        "image#okladka",          // desaturated cover art, hidden with no player
         "group/media"             // title + sliding skip buttons
     ],
 
@@ -244,8 +243,8 @@
     // Waybar shows an image only from a file on disk, and players provide
     // the cover art as an address (Spotify - an http link). The script downloads
     // it, turns it into a desaturated engraving with a vignette and returns the
-    // path. When nothing plays, it returns an empty dark slot of the same size -
-    // the module does not disappear, so the frame does not change width.
+    // path. With no player it prints nothing and the module hides, together
+    // with the separator line (the "empty" class in style.css).
     "image#okladka": {
         "exec": "$HOME/.local/bin/waybar-okladka",
         "size": 24,
@@ -257,11 +256,9 @@
 
     // Title and artist, in Garamond small caps.
     //
-    // The built-in "mpris" module used to be here. It vanished from the bar when
-    // nothing was playing - the frame then shrank by a whole zone, and the clock
-    // jumped sideways. The local/bin/waybar-odtwarzacz script listens to
-    // "playerctl --follow" and prints "cisza" during silence, so the module
-    // is always there.
+    // The local/bin/waybar-odtwarzacz script listens to "playerctl --follow"
+    // and prints the title in the interface language; with no player it prints
+    // empty text and Waybar hides the module, and the drawer buttons with it.
     //
     // NO "interval": the script writes a new line on every change of track
     // or state, and Waybar reads them live. The zone width is held by

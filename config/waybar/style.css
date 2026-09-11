@@ -166,10 +166,10 @@ window#waybar.empty #window {
 
        22:50  ·  Friday, 11 September │ ▪ title  ·  artist
 
-   Two zones in one frame. The frame MUST NOT change width -
-   the clock has to stay put when you turn music on and off. Three things
-   ensure this: the player script always prints something ("cisza"), the cover
-   art shows an empty slot during silence, and the title zone has a fixed min-width. */
+   Two zones in one frame. The player zone exists only while some application
+   is playing: with no player the cover art and the title hide and the frame
+   shrinks to the clock and the date. While playing, the title zone has a
+   fixed min-width, so changing tracks does not move the clock. */
 
 /* Clock - mono typeface, fixed-width digits. A small right margin:
    the date should hug the time, not stand apart like a separate module. */
@@ -212,8 +212,15 @@ window#waybar.empty #window {
     padding: 0 6px 0 12px;
 }
 
+/* No player: Waybar keeps the empty image module in place with the "empty"
+   class - without this rule the separator line and the padding would stay. */
+#image.okladka.empty {
+    border-left: none;
+    padding: 0;
+}
+
 /* Title and artist. min-width fits 28 characters (max-length in config.jsonc)
-   of letter-spaced 16 px small caps - a shorter title and "cisza" do not
+   of letter-spaced 16 px small caps - a shorter title does not
    narrow the frame. */
 #custom-odtwarzacz {
     min-width: 270px;
@@ -226,7 +233,7 @@ window#waybar.empty #window {
     font-feature-settings: "lnum";   /* digits in titles - see #custom-data */
 }
 
-/* Pause dims, silence drops to cold iron - the same gradation
+/* Pause dims, a stopped player drops to cold iron - the same gradation
    as disabled Bluetooth and no network. */
 #custom-odtwarzacz.pauza {
     color: @fg-dim;

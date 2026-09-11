@@ -109,7 +109,7 @@ The bars can be turned off in Cogwheel → System → Behavior → HUD bars. CPU
 ## Bar (Waybar)
 
 - **Left:** the active window title, offset past the HUD.
-- **Centre, the "now" frame:** `HH:MM` in the mono font, the date in small caps, the cover art (desaturated, with a vignette) and the title and artist. When nothing plays, an empty slot and "silence" remain, so the frame keeps its width and the clock does not move.
+- **Centre, the "now" frame:** `HH:MM` in the mono font, the date in small caps, the cover art (desaturated, with a vignette) and the title and artist. When no application is playing, the cover art, the title and the buttons hide and the frame shrinks to the clock and the date.
   - Hover the clock for a calendar. Scroll to change month; right-click to toggle month / year.
   - Hover the title to reveal previous / play-pause / next buttons.
   - Click the title or the cover to open the media panel.

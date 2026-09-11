@@ -109,7 +109,7 @@ Paski wyłączysz w Zębatce → System → Zachowanie → Paski HUD-u. Procesor
 ## Pasek (Waybar)
 
 - **Lewa strona:** tytuł aktywnego okna, odsunięty za HUD.
-- **Środek, ramka „teraz”:** `HH:MM` w kroju mono, data kapitalikami, okładka (zdesaturowana, z winietą) oraz tytuł i wykonawca. Gdy nic nie gra, zostaje pusty slot i napis „cisza”, więc ramka zachowuje szerokość, a zegar się nie przesuwa.
+- **Środek, ramka „teraz”:** `HH:MM` w kroju mono, data kapitalikami, okładka (zdesaturowana, z winietą) oraz tytuł i wykonawca. Gdy żaden program nic nie odtwarza, okładka, tytuł i przyciski się chowają, a ramka zwęża się do zegara i daty.
   - Najechanie na zegar pokazuje kalendarz. Kółko zmienia miesiąc, prawy przycisk przełącza miesiąc / rok.
   - Najechanie na tytuł wysuwa przyciski: poprzedni / pauza / następny.
   - Kliknięcie w tytuł albo okładkę otwiera panel odtwarzacza.

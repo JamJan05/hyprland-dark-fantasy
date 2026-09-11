@@ -23,7 +23,7 @@ A complete Hyprland desktop for Gentoo Linux that borrows the feel of the Dark S
 - **A pause menu you can drive from the keyboard**: press `SUPER + R` and start typing a program name. Arrows, Enter and Esc work in every tile.
 - **Floors**: up to ten floors of desktops, each with its own desktops 1-0, plus three-finger gestures.
 - **Live settings** in the Cogwheel: sound, brightness, power profile, battery charge limit, network, Bluetooth, gaps, blur, animation speed, wallpaper, keyboard layout, monitor scale, floors.
-- **A "now" frame on Waybar** with the clock, the date and the current track. Its width never changes, so the clock stays put.
+- **A "now" frame on Waybar** with the clock, the date and the current track. The player zone appears only while some application is playing.
 - **Quickshell handles notifications, the OSD and the media panel**, so there is no separate daemon.
 - **The same look everywhere**: hyprlock, an SDDM login theme, GTK 3/4, kitty, yazi, btop and the rofi clipboard picker.
 - **English or Polish**, switched instantly.

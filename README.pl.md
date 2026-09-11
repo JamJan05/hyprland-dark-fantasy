@@ -23,7 +23,7 @@ Kompletny pulpit Hyprlanda dla Gentoo Linux, który przypomina menu Dark Souls 3
 - **Menu pauzy, które obsłużysz samą klawiaturą**: naciśnij `SUPER + R` i zacznij wpisywać nazwę programu. Strzałki, Enter i Esc działają w każdym kaflu.
 - **Piętra**: do dziesięciu pięter pulpitów, każde z własnymi pulpitami 1-0, do tego gesty trzema palcami.
 - **Ustawienia na żywo** w Zębatce: dźwięk, jasność, profil zasilania, limit ładowania baterii, sieć, Bluetooth, odstępy, rozmycie, tempo animacji, tapeta, układ klawiatury, skala monitora, piętra.
-- **Ramka „teraz” na Waybarze** z zegarem, datą i bieżącym utworem. Jej szerokość się nie zmienia, więc zegar stoi w miejscu.
+- **Ramka „teraz” na Waybarze** z zegarem, datą i bieżącym utworem. Strefa odtwarzacza pojawia się tylko wtedy, gdy jakiś program coś odtwarza.
 - **Powiadomienia, OSD i panel odtwarzacza obsługuje Quickshell**, bez osobnego demona.
 - **Jeden wygląd wszędzie**: hyprlock, motyw logowania SDDM, GTK 3/4, kitty, yazi, btop i picker schowka w rofi.
 - **Angielski albo polski**, przełączany natychmiast.

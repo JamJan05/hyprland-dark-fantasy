@@ -4,16 +4,14 @@
 # ----------------------------------------------------------------------
 # WHY NOT THE BUILT-IN "mpris" MODULE
 #
-# The frame in the middle of the bar (clock | player) MUST NOT change width,
-# because the clock has to stay put. With no player, the built-in "mpris"
-# disappears from the bar completely - its "format-stopped" with empty text
-# hides the module, and a non-empty one does not work anyway when there is no
-# player, because the module then gets no data at all. The frame then shrank
-# by a whole zone, and the clock jumped sideways.
+# The player zone of the "now" frame appears only while some application is
+# playing (or paused). With no player the script prints EMPTY text, and Waybar
+# hides a custom module with empty text (src/modules/custom.cpp in 0.14) - the
+# frame shrinks to the clock and the date. The built-in "mpris" module would
+# hide too, but it cannot follow the interface language or give this tooltip.
 #
-# This script always prints something: the title when something plays, and
-# "silence"/"cisza" when nothing does. The zone width is held by "min-width"
-# in style.css, and "max-length" in config.jsonc cuts titles that are too long.
+# While a player exists, the zone width is held by "min-width" in style.css,
+# and "max-length" in config.jsonc cuts titles that are too long.
 #
 # ----------------------------------------------------------------------
 # NO POLLING
@@ -49,14 +47,10 @@ jezyk() {
 
 teksty() {
     if [[ $JEZYK == pl ]]; then
-        T_CISZA="cisza"
-        T_NIC="Nic nie gra"
         T_NIEZNANY="nieznany utwór"
         T_KLIK="klik: panel odtwarzacza"
         T_NAJAZD="najedź, aby rozwinąć przyciski"
     else
-        T_CISZA="silence"
-        T_NIC="Nothing playing"
         T_NIEZNANY="unknown track"
         T_KLIK="click: player panel"
         T_NAJAZD="hover to reveal the buttons"
@@ -99,7 +93,8 @@ wypisz() {  # $1 = text, $2 = class, $3 = tooltip
 # the language - style.css colors the title by them. Only the text is translated.
 pokaz() {
     if [[ -z $stan || ( -z $tytul && -z $wykonawca ) ]]; then
-        wypisz "$T_CISZA" "cisza" "$T_NIC"$'\n\n'"$T_KLIK"
+        # No player: empty text hides the module (and the drawer buttons).
+        wypisz "" "cisza" ""
         return
     fi
 

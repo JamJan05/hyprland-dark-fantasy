@@ -64,8 +64,8 @@ Nazwy plików i identyfikatorów w kodzie są w dużej części polskie (`kafle`
 | `uklad-startowy` | Autostart | Buduje układ powitalny: terminal i `tty-clock` po lewej, yazi po prawej. Pomija, gdy na pulpicie jest już okno. |
 | `df-jezyk` | Skrypty Waybara, hyprlock | Wypisuje język interfejsu, `en` albo `pl` |
 | `waybar-data` | `custom/data` | Data obok zegara w języku interfejsu, bez zera wiodącego |
-| `waybar-okladka` | `image#okladka` | Pobiera okładkę z MPRIS i robi z niej zdesaturowaną rycinę z winietą; przy ciszy pusty slot |
-| `waybar-odtwarzacz` | `custom/odtwarzacz` | Słucha `playerctl --follow` i wypisuje tytuł z wykonawcą albo „cisza” |
+| `waybar-okladka` | `image#okladka` | Pobiera okładkę z MPRIS i robi z niej zdesaturowaną rycinę z winietą; bez odtwarzacza nic nie wypisuje (moduł się chowa) |
+| `waybar-odtwarzacz` | `custom/odtwarzacz` | Słucha `playerctl --follow` i wypisuje tytuł z wykonawcą; bez odtwarzacza pusty tekst (moduł się chowa) |
 | `waybar-temperatura` | `custom/temperatura` | Temperatura procesora jako JSON, w dymku obciążenie, pamięć i grafika |
 | `zrzut-ekranu` | *(zapasowy)* | Poprzedni skrypt zrzutów na grim + slurp; skróty używają dziś `hyprshot` |
 

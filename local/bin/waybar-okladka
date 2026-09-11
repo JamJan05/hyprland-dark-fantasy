@@ -20,12 +20,11 @@
 # next to the original.
 #
 # ----------------------------------------------------------------------
-# WHEN NOTHING PLAYS - A DARK SQUARE, NOT EMPTINESS
+# WHEN NOTHING PLAYS - NOTHING
 #
-# The "now" frame in the middle of the bar must not change width (the clock
-# has to stay put). An empty image module gets the "empty" class and collapses
-# to zero, so instead of disappearing we show a dimmed square in the
-# surface color - the same size as the cover art.
+# The script prints no path. Waybar then hides the image and gives the module
+# the "empty" class (src/modules/image.cpp in 0.14); style.css drops the
+# separator line for that class, so the whole player zone leaves the frame.
 # ----------------------------------------------------------------------
 
 PAMIEC="${XDG_CACHE_HOME:-$HOME/.cache}/waybar-okladka"
@@ -35,47 +34,39 @@ mkdir -p "$PRZETWORZONE" || exit 0
 
 # Processing the cover art: $1 = source, $2 = result. 96 px - Waybar scales
 # the image down to "size" (24) itself, and the headroom lets it stay sharp
-# at screen scale 2 as well. No source ("-") draws a dimmed square.
+# at screen scale 2 as well.
 rycina() {
     python3 - "$1" "$2" <<'PY' 2>/dev/null
 import sys
-from PIL import Image, ImageEnhance, ImageDraw
+from PIL import Image, ImageEnhance
 
 zrodlo, wynik = sys.argv[1], sys.argv[2]
 BOK = 96
 
-if zrodlo == "-":
-    # Surface #151311 with a border in faded gold - the empty slot.
-    img = Image.new("RGB", (BOK, BOK), (21, 19, 17))
-    ImageDraw.Draw(img).rectangle([0, 0, BOK - 1, BOK - 1], outline=(58, 52, 40))
-else:
-    img = Image.open(zrodlo).convert("RGB")
-    # Center crop to a square - covers from the browser are sometimes 16:9.
-    w, h = img.size
-    b = min(w, h)
-    img = img.crop(((w - b) // 2, (h - b) // 2, (w - b) // 2 + b, (h - b) // 2 + b))
-    img = img.resize((BOK, BOK), Image.LANCZOS)
-    img = ImageEnhance.Color(img).enhance(0.18)      # almost no color
-    img = ImageEnhance.Brightness(img).enhance(0.82)  # no brighter than the bar text
+img = Image.open(zrodlo).convert("RGB")
+# Center crop to a square - covers from the browser are sometimes 16:9.
+w, h = img.size
+b = min(w, h)
+img = img.crop(((w - b) // 2, (h - b) // 2, (w - b) // 2 + b, (h - b) // 2 + b))
+img = img.resize((BOK, BOK), Image.LANCZOS)
+img = ImageEnhance.Color(img).enhance(0.18)      # almost no color
+img = ImageEnhance.Brightness(img).enhance(0.82)  # no brighter than the bar text
 
-    # Vignette: brightness falls toward the corners with the squared distance from the center.
-    maska = Image.new("L", (BOK, BOK))
-    px = maska.load()
-    s = (BOK - 1) / 2
-    for y in range(BOK):
-        for x in range(BOK):
-            d = (((x - s) / s) ** 2 + ((y - s) / s) ** 2) / 2
-            px[x, y] = int(255 * min(1.0, d) * 0.75)
-    img = Image.composite(Image.new("RGB", (BOK, BOK), (11, 11, 12)), img, maska)
+# Vignette: brightness falls toward the corners with the squared distance from the center.
+maska = Image.new("L", (BOK, BOK))
+px = maska.load()
+s = (BOK - 1) / 2
+for y in range(BOK):
+    for x in range(BOK):
+        d = (((x - s) / s) ** 2 + ((y - s) / s) ** 2) / 2
+        px[x, y] = int(255 * min(1.0, d) * 0.75)
+img = Image.composite(Image.new("RGB", (BOK, BOK), (11, 11, 12)), img, maska)
 
 img.save(wynik)
 PY
 }
 
 wypisz_cisze() {
-    local cisza="$PRZETWORZONE/cisza.png"
-    [[ -s $cisza ]] || rycina - "$cisza"
-    [[ -s $cisza ]] && printf '%s\n' "$cisza"
     exit 0
 }
 
@@ -104,7 +95,7 @@ if [[ ! -s $wynik ]]; then
         file://*)
             plik=$(odkoduj "${url#file://}")
             # The player may point to cover art that is no longer on
-            # disk. That is not a failure, just a reason to show the empty slot.
+            # disk. That is not a failure, just a reason to hide the cover art.
             [[ -f $plik ]] || wypisz_cisze
             ;;
 

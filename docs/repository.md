@@ -64,8 +64,8 @@ Many file and identifier names in the code are Polish (`kafle` = tiles, `Zebatka
 | `uklad-startowy` | Autostart | Builds the welcome layout: terminal and `tty-clock` on the left, yazi on the right. Skips when the desktop already has a window. |
 | `df-jezyk` | Waybar scripts, hyprlock | Prints the interface language, `en` or `pl` |
 | `waybar-data` | `custom/data` | Date next to the clock in the interface language, without a leading zero |
-| `waybar-okladka` | `image#okladka` | Downloads the MPRIS cover art and turns it into a desaturated engraving with a vignette; an empty slot when nothing plays |
-| `waybar-odtwarzacz` | `custom/odtwarzacz` | Follows `playerctl --follow` and prints the title and artist, or "silence" |
+| `waybar-okladka` | `image#okladka` | Downloads the MPRIS cover art and turns it into a desaturated engraving with a vignette; prints nothing (the module hides) when no player is running |
+| `waybar-odtwarzacz` | `custom/odtwarzacz` | Follows `playerctl --follow` and prints the title and artist; empty text (the module hides) when no player is running |
 | `waybar-temperatura` | `custom/temperatura` | CPU temperature as JSON, with CPU load, memory and GPU in the tooltip |
 | `zrzut-ekranu` | *(fallback)* | The previous grim + slurp screenshot script; the keybindings now use `hyprshot` |
 
