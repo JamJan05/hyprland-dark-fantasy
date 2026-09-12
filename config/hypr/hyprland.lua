@@ -622,7 +622,18 @@ hl.config({
     misc = {
         force_default_wallpaper = 0,     -- 0 = no built-in wallpaper; hyprpaper draws the background
         disable_hyprland_logo   = true,  -- no random background with the Hyprland logo / anime
-        disable_splash_rendering = true, -- no random splash text on the background (it showed between the tiles)
+        -- WARNING: this option does NOT remove the splash text ("Read the wiki.") that
+        -- sits at the bottom of the wallpaper. Hyprland only picks the random string -
+        -- the text is DRAWN BY HYPRPAPER, which fetches it from the compositor and paints
+        -- it over the wallpaper. Measured on Hyprland 0.56.2: "hyprctl getoption
+        -- misc:disable_splash_rendering" reports true while the text still renders, and
+        -- neither disable_hyprland_logo, nor force_default_wallpaper, nor a transparent
+        -- misc:col.splash changes anything. The switch that does work is "splash = 0"
+        -- in hyprpaper.conf (see hyprwm/Hyprland discussions #13176 and #14704).
+        --
+        -- What stays below only concerns the splash on Hyprland's OWN background, the one
+        -- hyprpaper covers anyway.
+        disable_splash_rendering = true,
     },
 })
 
