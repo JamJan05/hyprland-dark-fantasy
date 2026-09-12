@@ -272,6 +272,17 @@ local function autostart()
    -- pipewire-pulse and wireplumber). Without it neither the volume keys
    -- nor the volume indicator in the bar work.
    hl.exec_cmd("gentoo-pipewire-launcher restart")
+
+   -- Hardware settings from before the shutdown: screen and keyboard
+   -- backlight, volume and mute. Restores them, then saves every few seconds
+   -- (OpenRC has nothing that would remember the backlight). It waits for
+   -- the PipeWire started just above by itself. Num Lock is handled in the
+   -- INPUT DEVICES section. Details in ~/.local/bin/pamiec-ustawien.
+   --
+   -- run_once works here because the script has a "#!/bin/bash" shebang, so
+   -- the process name (comm) is "pamiec-ustawien". The script also holds a
+   -- flock, so a second instance exits anyway.
+   run_once("pamiec-ustawien")
 end
 
 -- Registers the actual autostart at session start.
@@ -646,8 +657,28 @@ hl.config({
 -- the cursor, mouse sensitivity and gestures.
 -- Change it when you want a different keyboard layout, a different mouse sensitivity or
 -- natural scrolling on the touchpad.
+
+-- Num Lock from before the shutdown. ~/.local/bin/pamiec-ustawien keeps
+-- "numlock=0/1" in $XDG_STATE_HOME/dark-fantasy/ustawienia-sprzetu up to date.
+-- Hyprland has no dispatcher that flips Num Lock at runtime, so the saved
+-- state goes into numlock_by_default, which applies when a keyboard is
+-- created - at login. No file (first boot) = off, Hyprland's default.
+local function readNumlock()
+    local state = os.getenv("XDG_STATE_HOME")
+    if not state or state == "" then
+        state = (os.getenv("HOME") or "") .. "/.local/state"
+    end
+    local f = io.open(state .. "/dark-fantasy/ustawienia-sprzetu", "r")
+    if not f then return false end
+    local text = f:read("a") or ""
+    f:close()
+    return ("\n" .. text):find("\nnumlock=1", 1, true) ~= nil
+end
+
 hl.config({
     input = {
+        numlock_by_default = readNumlock(), -- Num Lock state from the previous session (see above)
+
         kb_layout  = "pl", -- keyboard layout (XKB code), e.g. "pl", "us", or "pl,us" for two layouts
         kb_variant = "",   -- layout variant, e.g. "dvorak" (empty = default)
         kb_model   = "",   -- keyboard model per XKB (empty = default)

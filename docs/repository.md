@@ -61,6 +61,7 @@ Many file and identifier names in the code are Polish (`kafle` = tiles, `Zebatka
 | `menedzer-plikow` | `SUPER + W`, Satchel tile | Runs yazi in kitty as a regular tiled window. It exists because keybindings and `.desktop` entries take a single word. |
 | `monitor-systemu` | Status tile | Runs btop in a panel window: class `df-panel` (rule in `hyprland.lua`) and the separate kitty config `panel.conf` |
 | `limit-ladowania` | Cogwheel → Power, terminal | Reads or sets the battery charge thresholds in the right order; uses `pkexec` without write access |
+| `pamiec-ustawien` | Autostart | Restores the screen and keyboard backlight, volume and mute from before the shutdown, then saves them every few seconds to `~/.local/state/dark-fantasy/ustawienia-sprzetu`. Num Lock from the same file is read by `hyprland.lua`. |
 | `uklad-startowy` | Autostart | Builds the welcome layout: terminal and `tty-clock` on the left, yazi on the right. Skips when the desktop already has a window. |
 | `df-jezyk` | Waybar scripts, hyprlock | Prints the interface language, `en` or `pl` |
 | `waybar-data` | `custom/data` | Date next to the clock in the interface language, without a leading zero |

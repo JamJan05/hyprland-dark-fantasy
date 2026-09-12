@@ -1,0 +1,225 @@
+#!/bin/bash
+#
+# pamiec-ustawien - hardware settings survive a shutdown.
+#
+#   pamiec-ustawien          restores the saved state, then keeps it up to date
+#                            (autostart in hyprland.lua)
+#   pamiec-ustawien zapisz   saves the current state once and exits
+#   pamiec-ustawien pokaz    prints the saved state
+#
+# Remembered:
+#   - screen backlight            /sys/class/backlight/*
+#   - keyboard backlight          /sys/class/leds/*::kbd_backlight
+#   - volume and mute of the default output and the default input
+#   - Num Lock                    (restored by hyprland.lua, see below)
+#
+# WHY IT IS NEEDED. On OpenRC nothing saves the backlight - there is no
+# systemd-backlight, so amdgpu comes up at 100 % after every boot.
+# WirePlumber does keep route volumes (~/.local/state/wireplumber/default-routes),
+# but it writes them with a delay and dies together with the session at
+# shutdown, so the last change can get lost. Num Lock has no memory at all.
+#
+# WHY POLLING, NOT A SAVE AT SHUTDOWN. At poweroff the session is killed
+# (killprocs, then SIGKILL) and PipeWire may be gone before a TERM handler
+# gets to run. So the state is read every INTERWAL seconds and the file is
+# rewritten only when something changed - at most a few seconds get lost. The
+# trap still saves once more on TERM/HUP/INT.
+#
+# A VALUE THAT CANNOT BE READ KEEPS THE OLD ONE. At shutdown wpctl and hyprctl
+# start failing one after another; without this rule the last save would wipe
+# the volume and Num Lock.
+#
+# VOLUME IS TIED TO THE DEVICE. The node name is saved next to the volume and
+# restored only when the same device is the default again - volume saved on
+# Bluetooth headphones must not land on the speakers.
+#
+# NUM LOCK is not set here: Hyprland has no dispatcher for it. hyprland.lua
+# reads the "numlock" key from this file at config load and passes it to
+# input:numlock_by_default, which applies when the keyboard is created, i.e.
+# at login.
+#
+# FILE: $XDG_STATE_HOME/dark-fantasy/ustawienia-sprzetu, "key=value" lines.
+# PAMIEC_PLIK=/path replaces it - for tests.
+
+set -uo pipefail   # no -e: one failed read must not stop the loop
+
+STAN_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dark-fantasy"
+PLIK="${PAMIEC_PLIK:-$STAN_DIR/ustawienia-sprzetu}"
+INTERWAL=3
+
+# The backlight is never restored below this percentage. A screen saved
+# at 0 would come up black, with no way to see where the brightness slider is.
+MIN_JASNOSC_PROC=5
+
+KLUCZE=(
+    jasnosc_urzadzenie jasnosc
+    klawiatura_urzadzenie klawiatura
+    glosnik_wezel glosnik_glosnosc glosnik_wyciszony
+    mikrofon_wezel mikrofon_glosnosc mikrofon_wyciszony
+    numlock
+)
+
+declare -A stan=() nowy=()
+
+# The first device of each class, found once - devices do not come and go.
+# "The first backlight wins" is the same rule brightnessctl and
+# services/Brightness.qml follow, so all three talk about the same screen.
+PODSWIETLENIE=""
+for d in /sys/class/backlight/*; do
+    [[ -e $d/brightness ]] && { PODSWIETLENIE=${d##*/}; break; }
+done
+KLAWIATURA=""
+for d in /sys/class/leds/*::kbd_backlight; do
+    [[ -e $d/brightness ]] && { KLAWIATURA=${d##*/}; break; }
+done
+
+wczytaj() {
+    stan=()
+    [[ -r $PLIK ]] || return 0
+    local k v
+    while IFS='=' read -r k v; do
+        [[ $k =~ ^[a-z_]+$ ]] && stan[$k]=$v
+    done < "$PLIK"
+}
+
+zapisz_plik() {
+    mkdir -p "$(dirname "$PLIK")" || return 1
+    local tmp="$PLIK.tmp.$$" k
+    {
+        for k in "${KLUCZE[@]}"; do
+            if [[ -v nowy[$k] ]]; then printf '%s=%s\n' "$k" "${nowy[$k]}"; fi
+        done
+    } > "$tmp" && mv -f "$tmp" "$PLIK"   # rename = never a half-written file
+}
+
+# $1 = @DEFAULT_AUDIO_SINK@ or @DEFAULT_AUDIO_SOURCE@; prints node.name
+wezel_audio() {
+    wpctl inspect "$1" 2>/dev/null \
+        | sed -n 's/^[ *]*node\.name = "\(.*\)"$/\1/p' | head -n1
+}
+
+# $1 = wpctl target, $2 = key prefix
+odczytaj_audio() {
+    local wezel wynik
+    wezel=$(wezel_audio "$1")
+    [[ -n $wezel ]] || return 0
+    wynik=$(wpctl get-volume "$1" 2>/dev/null) || return 0
+    [[ $wynik =~ Volume:\ ([0-9.]+) ]] || return 0
+    nowy[${2}_wezel]=$wezel
+    nowy[${2}_glosnosc]=${BASH_REMATCH[1]}
+    if [[ $wynik == *MUTED* ]]; then nowy[${2}_wyciszony]=1; else nowy[${2}_wyciszony]=0; fi
+}
+
+# Fills nowy[] with the current state, starting from the saved one.
+zbierz() {
+    local k v
+    nowy=()
+    for k in "${!stan[@]}"; do nowy[$k]=${stan[$k]}; done
+
+    if [[ -n $PODSWIETLENIE ]] && read -r v < "/sys/class/backlight/$PODSWIETLENIE/brightness" 2>/dev/null; then
+        nowy[jasnosc_urzadzenie]=$PODSWIETLENIE
+        nowy[jasnosc]=$v
+    fi
+    if [[ -n $KLAWIATURA ]] && read -r v < "/sys/class/leds/$KLAWIATURA/brightness" 2>/dev/null; then
+        nowy[klawiatura_urzadzenie]=$KLAWIATURA
+        nowy[klawiatura]=$v
+    fi
+
+    if command -v wpctl >/dev/null; then
+        odczytaj_audio @DEFAULT_AUDIO_SINK@   glosnik
+        odczytaj_audio @DEFAULT_AUDIO_SOURCE@ mikrofon
+    fi
+
+    # The main keyboard, the same one Hyprland shows the lock state for.
+    # "tostring", not "// empty": jq's // treats false as missing, so Num Lock
+    # off would never be saved.
+    v=$(hyprctl devices -j 2>/dev/null \
+        | jq -r '[.keyboards[] | select(.main) | .numLock][0] | tostring' 2>/dev/null)
+    case $v in
+        true)  nowy[numlock]=1 ;;
+        false) nowy[numlock]=0 ;;
+    esac
+}
+
+zapisz() {
+    zbierz
+    local k
+    for k in "${KLUCZE[@]}"; do
+        if [[ ${stan[$k]-} != "${nowy[$k]-}" ]]; then
+            zapisz_plik || return 0
+            stan=()
+            for k in "${!nowy[@]}"; do stan[$k]=${nowy[$k]}; done
+            return 0
+        fi
+    done
+}
+
+# $1 = device directory, $2 = saved raw value, $3 = minimum percent
+ustaw_jasnosc() {
+    local max v=$2
+    [[ $v =~ ^[0-9]+$ && -r $1/max_brightness ]] || return 0
+    read -r max < "$1/max_brightness" || return 0
+    (( v > max )) && v=$max
+    (( v < max * $3 / 100 )) && v=$(( max * $3 / 100 ))
+    brightnessctl -q -d "${1##*/}" set "$v" >/dev/null 2>&1
+}
+
+# $1 = wpctl target, $2 = key prefix
+przywroc_audio() {
+    local wezel=${stan[${2}_wezel]:-} glosnosc=${stan[${2}_glosnosc]:-}
+    [[ -n $wezel && $glosnosc =~ ^[0-9]+(\.[0-9]+)?$ ]] || return 0
+    [[ $(wezel_audio "$1") == "$wezel" ]] || return 0
+    wpctl set-volume "$1" "$glosnosc"
+    wpctl set-mute "$1" "${stan[${2}_wyciszony]:-0}"
+}
+
+przywroc() {
+    wczytaj
+
+    # Hardware first - it does not wait for anything.
+    [[ ${stan[jasnosc_urzadzenie]:-} == "$PODSWIETLENIE" && -n $PODSWIETLENIE ]] &&
+        ustaw_jasnosc "/sys/class/backlight/$PODSWIETLENIE" "${stan[jasnosc]:-}" "$MIN_JASNOSC_PROC"
+    [[ ${stan[klawiatura_urzadzenie]:-} == "$KLAWIATURA" && -n $KLAWIATURA ]] &&
+        ustaw_jasnosc "/sys/class/leds/$KLAWIATURA" "${stan[klawiatura]:-}" 0
+
+    # Audio: the autostart runs "gentoo-pipewire-launcher restart" at the same
+    # moment, so wait (up to 30 s) until WirePlumber has a default output.
+    command -v wpctl >/dev/null || return 0
+    local i
+    for (( i = 0; i < 60; i++ )); do
+        [[ -n $(wezel_audio @DEFAULT_AUDIO_SINK@) ]] && break
+        sleep 0.5
+    done
+    # WirePlumber applies its own saved route volume when the device appears.
+    # Going after it means the more recent value from this file wins.
+    sleep 2
+    przywroc_audio @DEFAULT_AUDIO_SINK@   glosnik
+    przywroc_audio @DEFAULT_AUDIO_SOURCE@ mikrofon
+}
+
+case ${1:-} in
+    zapisz)
+        wczytaj; zapisz; exit 0 ;;
+    pokaz)
+        [[ -r $PLIK ]] && cat "$PLIK"; exit 0 ;;
+    "")
+        ;;
+    *)
+        echo "usage: pamiec-ustawien [zapisz|pokaz]" >&2; exit 2 ;;
+esac
+
+# One watcher per session. Two would not break anything, but calling
+# __autostart() by hand would pile them up.
+mkdir -p "$STAN_DIR"
+exec 9> "$STAN_DIR/.pamiec-ustawien.lock"
+flock -n 9 || exit 0
+
+przywroc
+trap 'zapisz; exit 0' TERM HUP INT
+
+while :; do
+    zapisz
+    # sleep in the background + wait, so TERM is handled at once instead of
+    # after the sleep ends.
+    sleep "$INTERWAL" & wait $!
+done
