@@ -6,7 +6,7 @@ Pulpit instalują trzy skrypty. Każdy z nich **pokazuje plan i niczego nie zmie
 
 | Skrypt | Co robi | Root |
 |---|---|---|
-| [`install.sh`](../../install.sh) | Dowiązuje `config/` i resztę do `~/.config` i `~/.local` | nie |
+| [`install.sh`](../../install.sh) | Kopiuje `config/` i resztę do `~/.config` i `~/.local` | nie |
 | [`bootstrap.sh`](../../bootstrap.sh) | Instalacja Gentoo od zera: overlaye, pliki Portage, pakiety, klon, `install.sh --apply`, reguła udev | przez `sudo` |
 | [`sddm/install-theme.sh`](../../sddm/install-theme.sh) | Instaluje motyw logowania SDDM i ustawia go jako domyślny | przez `sudo` |
 
@@ -37,7 +37,7 @@ Co robi `--apply`, po kolei:
 7. Uruchamia `install.sh --apply`.
 8. Wgrywa regułę udev dla baterii, ale tylko wtedy, gdy bateria ma progi ładowania.
 
-Skrypt jest idempotentny: przy ponownym uruchomieniu pomija to, co już zrobione. `./bootstrap.sh --help` wypisuje to samo streszczenie.
+Skrypt jest idempotentny: przy ponownym uruchomieniu pomija to, co już zrobione. `./bootstrap.sh --help` wypisuje to samo streszczenie. Zainstalowany pulpit nie potrzebuje klonu w `~/hyprland-dark-fantasy`; możesz go potem usunąć.
 
 Jeśli `sudo` nie może zapytać o hasło, bo nie ma terminala, pobierz skrypt na dysk i uruchom go bezpośrednio:
 
@@ -88,7 +88,7 @@ Uwagi do listy:
 - **Bez któregoś pakietu** odpowiadający mu element wraca do domyślnego wyglądu albo pokazuje stan „niedostępne”; pulpit i tak wstaje.
 - **SDDM** i **fish** nie są na liście. Motyw SDDM i `config/fish/config.fish` są opcjonalne.
 
-Potem dowiąż konfigurację:
+Potem zainstaluj konfigurację:
 
 ```sh
 git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
@@ -97,9 +97,9 @@ cd ~/hyprland-dark-fantasy
 ./install.sh --apply
 ```
 
-## Co dowiązuje `install.sh`
+## Co kopiuje `install.sh`
 
-Każdy wpis to **dowiązanie symboliczne** do repozytorium. Jeśli w miejscu docelowym leży zwykły plik, najpierw trafia on do `<plik>.bak-RRRRMMDD-GGMMSS`. Dowiązanie, które już wskazuje we właściwe miejsce, zostaje nietknięte.
+Każdy wpis jest **kopiowany** z repozytorium; instalator nie tworzy dowiązań symbolicznych. Po `--apply` katalog z repozytorium można usunąć. Żeby coś później zmienić, sklonuj repo ponownie, wprowadź zmianę, uruchom `./install.sh --apply` i znowu usuń katalog.
 
 | Obszar | Źródło w repo | Cel |
 |---|---|---|
@@ -119,12 +119,24 @@ Każdy wpis to **dowiązanie symboliczne** do repozytorium. Jeśli w miejscu doc
 
 `~/.local/share` oznacza `$XDG_DATA_HOME`, jeśli ta zmienna jest ustawiona.
 
+Instalator zapisuje sumę kontrolną SHA-256 każdego zainstalowanego pliku w `~/.local/state/dark-fantasy/instalacja.sha256`. Przy każdym uruchomieniu porównuje dla każdego pliku wersję w repo, wersję w systemie i sumę z ostatniej instalacji, po czym robi jedno z poniższych:
+
+| Sytuacja | Co się dzieje |
+|---|---|
+| Plik w systemie jest identyczny z repo | nic |
+| Pliku w systemie nie ma | wersja z repo jest kopiowana |
+| Plik w systemie nie zmienił się od ostatniej instalacji | zostaje nadpisany wersją z repo (aktualizacja) |
+| Plik w systemie zmieniłeś, a plik w repo nie zmienił się od ostatniej instalacji | Twoja lokalna zmiana **zostaje** |
+| Zmieniły się oba albo nie ma jeszcze zapisu (pierwsza instalacja) | plik z systemu trafia do `<plik>.bak-RRRRMMDD-GGMMSS`, a potem kopiowana jest wersja z repo |
+
+Dowiązania zostawione przez starsze wersje instalatora są automatycznie zastępowane kopiami. Katalogi (Quickshell i ikony kafli) są kopiowane plik po pliku. Plik, który zniknął z repo, jest usuwany z kopii w systemie, jeśli go nie zmieniałeś; w przeciwnym razie zostaje, a instalator wypisuje ostrzeżenie.
+
 Instalator robi jeszcze dwie rzeczy:
 
 - **Ikony kafli.** Przy `--apply` uruchamia `tools/skaluj-ikony-menu.py` (potrzebny `python3` z Pillow), który robi kopie 256 px z oryginałów w `assets/ikony-menu/`. Jeśli brakuje oryginału, kafel pokazuje ciemny kwadrat z nazwą, a instalator wypisuje ostrzeżenie.
 - **Katalog tapet.** Zębatka (Cogwheel) listuje obrazy z `<XDG Pictures>/Wallpapers` albo z istniejącego `<XDG Pictures>/Tapety`. Jeśli w tym katalogu nie ma obrazów, `--apply` kopiuje do niego `assets/wallpaper.png`, żeby lista nie była pusta na świeżej instalacji.
 
-`kde-gtk-config`, moduł ustawień GTK z Plasmy, potrafi przy zmianie motywu w Plasmie podmienić dowiązanie `gtk.css` na zwykły plik. Ponowne `./install.sh --apply` odłoży ten plik do kopii i przywróci dowiązanie.
+`kde-gtk-config`, moduł ustawień GTK z Plasmy, potrafi przy zmianie motywu w Plasmie nadpisać `gtk.css`. Dla `install.sh` to zwykła lokalna zmiana, więc ją zachowa, chyba że w repo zmienił się też `gtk.css`. Żeby wymusić z powrotem paletę z repo, usuń `~/.config/gtk-3.0/gtk.css` i `~/.config/gtk-4.0/gtk.css`, a potem uruchom `./install.sh --apply`.
 
 ## Po instalacji
 
@@ -192,14 +204,18 @@ sudo udevadm trigger --subsystem-match=power_supply --action=change
 
 ### Repozytorium jest kopią
 
-Po `install.sh --apply` pliki w `~/.config` są dowiązaniami do repozytorium. Nie ma dwóch kopii, jest jeden plik widziany z dwóch ścieżek. Czy edytujesz w repo, czy w `~/.config`, `git status` widzi zmianę, więc kopia to po prostu commit:
+Po `install.sh --apply` pliki w `~/.config` są kopiami, nie dowiązaniami. Ich edycja nie pojawia się w `git status`, a edycja w repo nie zmienia pulpitu, dopóki nie uruchomisz `./install.sh --apply`. Repozytorium nadal jest kopią zapasową, ale zmianę zrobioną w systemie trzeba do niego przenieść ręcznie:
 
 ```sh
+git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
+cp ~/.config/hypr/hyprland.lua ~/hyprland-dark-fantasy/config/hypr/hyprland.lua
 cd ~/hyprland-dark-fantasy
 git add -A && git commit -m "opis zmiany" && git push
 ```
 
-### Co nie jest dowiązane
+Prościej od razu edytować w klonie, zrobić commit i uruchomić `./install.sh --apply`.
+
+### Czego `install.sh` nie obejmuje
 
 Te pliki leżą w katalogach systemowych i wymagają roota. Jeśli je zmienisz, skopiuj je do repo samodzielnie.
 
@@ -214,10 +230,10 @@ Część stanu celowo zostaje **poza** repozytorium, bo dotyczy jednego komputer
 - `~/.config/hypr/ustawienia.lua`: ustawienia Hyprlanda z Zębatki (wpisane też do `.gitignore`),
 - `~/.local/state/dark-fantasy/powloka.json`: ustawienia powłoki (język, paski HUD-u, limit ładowania).
 
-**Wyjątkiem jest tapeta.** Wybór tapety w Zębatce przepisuje `path` w `hyprpaper.conf` i `$tapeta` w `hyprlock.conf`. Oba pliki są dowiązaniami do repo, więc zmiana pojawia się w `git status`. Commituj ją tylko wtedy, gdy ta ścieżka istnieje też na Twoich innych komputerach.
+**Tapeta też jest lokalna.** Wybór tapety w Zębatce przepisuje `path` w `~/.config/hypr/hyprpaper.conf` i `$tapeta` w `~/.config/hypr/hyprlock.conf`. To kopie, więc zmiana jest lokalna: nie pojawia się w `git status`, a `install.sh --apply` ją zachowuje, chyba że od ostatniej instalacji zmieniła się wersja któregoś z tych plików w repo (wtedy Twoja wersja trafia do kopii `.bak-*` i tapetę wybierasz ponownie). Przenoś te pliki do repo tylko wtedy, gdy ścieżka obrazu istnieje też na Twoich innych komputerach.
 
-> [!WARNING]
-> `sed -i` i edytory z „zapisem atomowym” podmieniają dowiązanie na zwykły plik. Zmiana wtedy działa, ale do repo nie trafia. Patrz [troubleshooting.md](troubleshooting.md#sed--i-zrywa-dowiązania).
+> [!NOTE]
+> Plik `<plik>.bak-RRRRMMDD-GGMMSS` obok pliku konfiguracji to wersja, którą `install.sh` odłożył na bok, bo zmieniła się i ona, i plik w repo (albo była to pierwsza instalacja). Porównaj go z nowym plikiem, przenieś, co potrzebne, i usuń. Patrz [troubleshooting.md](troubleshooting.md#pliki-bak-obok-konfiguracji).
 
 ### Przywracanie po reinstalacji systemu
 
@@ -227,7 +243,7 @@ Na świeżym Gentoo z siecią i `git`:
 git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
 cd ~/hyprland-dark-fantasy
 ./bootstrap.sh              # plan
-./bootstrap.sh --apply      # overlaye, pakiety, dowiązania, reguła udev
+./bootstrap.sh --apply      # overlaye, pakiety, konfiguracja, reguła udev
 cd sddm && ./install-theme.sh --apply && cd ..            # opcjonalnie
 sudo rc-service bluetooth start && sudo rc-update add bluetooth default
 ```

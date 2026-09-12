@@ -3,7 +3,7 @@
 [← README](../../README.pl.md) · [English](../repository.md)
 
 ```
-config/              lustro ~/.config; install.sh dowiązuje je jeden do jednego
+config/              lustro ~/.config; install.sh kopiuje je jeden do jednego
   hypr/              kompozytor, piętra, blokada, bezczynność, tapeta
   waybar/            pasek i jego style
   quickshell/        powłoka QtQuick: HUD, rząd kafli, panele, OSD, powiadomienia
@@ -20,7 +20,7 @@ gentoo/              keywordy i flagi USE dla Portage
 udev/                reguła: progi ładowania baterii zapisywalne dla wheel
 sddm/                motyw logowania (QML) i jego instalator
 tools/               skalowanie ikon, tekstury i generatory glifów dla powłoki
-install.sh           dowiązuje config/ do ~/.config
+install.sh           kopiuje config/ do ~/.config
 bootstrap.sh         instalacja od zera: overlaye, pakiety, konfiguracja
 docs/                dokumentacja (docs/pl/ po polsku)
 ```
@@ -54,7 +54,7 @@ Nazwy plików i identyfikatorów w kodzie są w dużej części polskie (`kafle`
 
 ## Skrypty pomocnicze (`local/bin/`)
 
-`install.sh` dowiązuje je do `~/.local/bin/`.
+`install.sh` kopiuje je do `~/.local/bin/`.
 
 | Skrypt | Wołany przez | Co robi |
 |---|---|---|

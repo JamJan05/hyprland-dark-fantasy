@@ -20,7 +20,7 @@
 #   4. installs the package.accept_keywords and package.use files,
 #   5. installs the packages,
 #   6. clones the repository,
-#   7. runs install.sh --apply, which links the configuration.
+#   7. runs install.sh --apply, which copies the configuration.
 #
 # Operations that need root go through sudo and are printed before they run.
 # The script is idempotent - it is safe to run it again.

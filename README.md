@@ -27,23 +27,23 @@ A complete Hyprland desktop for Gentoo Linux that borrows the feel of the Dark S
 - **Quickshell handles notifications, the OSD and the media panel**, so there is no separate daemon.
 - **The same look everywhere**: hyprlock, an SDDM login theme, GTK 3/4, kitty, yazi, btop and the rofi clipboard picker.
 - **English or Polish**, switched instantly.
-- **Installers that show a plan first**: a symlink installer with backups, and a from-scratch Gentoo bootstrap.
+- **Installers that show a plan first**: a copying installer that keeps your local changes and backs up the rest, and a from-scratch Gentoo bootstrap.
 
 The design is original. The repository contains no assets, images, fonts or texts from Dark Souls or any other game.
 
 ## Quick start
 
-These commands link the configuration. The packages have to be installed already (see [Requirements](#requirements)).
+These commands install the configuration. The packages have to be installed already (see [Requirements](#requirements)).
 
 ```sh
 git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
 cd ~/hyprland-dark-fantasy
-./install.sh            # dry run: prints what would be linked, changes nothing
-./install.sh --apply    # symlinks config/ into ~/.config, backs up existing files
+./install.sh            # dry run: prints what would be copied, changes nothing
+./install.sh --apply    # copies config/ into ~/.config, backs up files you changed
 hyprctl reload          # or log out and start a Hyprland session
 ```
 
-After `--apply` the files in `~/.config` are symlinks into the repository, so any edit in the repo takes effect immediately. The installer also prints the steps that need root: Portage files, the SDDM theme and the udev rule.
+After `--apply` the files in `~/.config` are copies, so the repository folder can be deleted. To change something later, clone it again, edit, run `./install.sh --apply` and delete the folder again. Your local edits in `~/.config` survive a reinstall unless the same file changed in the repo; see [installation.md](docs/installation.md#what-installsh-copies). The installer also prints the steps that need root: Portage files, the SDDM theme and the udev rule.
 
 > [!NOTE]
 > The default keyboard layout is `pl`. Change it in Cogwheel → Hyprland → Input → Keyboard layout, or in `kb_layout` in `config/hypr/hyprland.lua`.

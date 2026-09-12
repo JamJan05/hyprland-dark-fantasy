@@ -9,8 +9,8 @@
 # menedzer-plikow).
 #
 # btop gets its config explicitly (-c). The file ~/.config/btop/btop.conf is
-# a symlink into the repository and has save_config_on_exit = False - without
-# that, btop would rewrite it its own way on every exit, straight into the repo.
+# copied there by install.sh and has save_config_on_exit = False - without
+# that, btop would rewrite it its own way on every exit and drop the comments.
 
 TERMINAL="${TERMINAL:-kitty}"
 

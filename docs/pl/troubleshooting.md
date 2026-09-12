@@ -12,7 +12,7 @@ Każdą z tych rzeczy wykryto przy budowaniu tej konfiguracji. Większość koń
 
 **Nie ma rzędów limitu ładowania.** Bateria nie ma w sysfs plików `charge_control_*`, więc na tym sprzęcie ta opcja nie jest dostępna.
 
-**`git status` pokazuje zmiany w `hyprpaper.conf` i `hyprlock.conf`.** Wybrałeś tapetę w Zębatce (Cogwheel), a to przepisuje ścieżkę w obu plikach. Patrz [installation.md](installation.md#co-nie-jest-dowiązane).
+**Po `./install.sh --apply` wróciła domyślna tapeta.** Tapeta wybrana w Zębatce (Cogwheel) jest zapisana w `hyprpaper.conf` i `hyprlock.conf` jako lokalna zmiana. Instalator ją zachowuje, chyba że w repo zmieniła się wersja tych plików; wtedy Twoja wersja leży obok w pliku `.bak-*`. Wybierz tapetę ponownie w Zębatce. Patrz [installation.md](installation.md#czego-installsh-nie-obejmuje).
 
 **Ustawienie z Zębatki zepsuło Hyprlanda.** Hyprland pokaże powiadomienie wskazujące `ustawienia.lua`. Użyj Zębatka → Hyprland → Przywróć domyślne albo usuń `~/.config/hypr/ustawienia.lua` i uruchom `hyprctl reload`.
 
@@ -26,17 +26,30 @@ Każdą z tych rzeczy wykryto przy budowaniu tej konfiguracji. Większość koń
 hyprctl dispatch '(function() __autostart(); return hl.dsp.no_op() end)()'
 ```
 
-## Dowiązania
+## Skopiowana konfiguracja
 
-### `sed -i` zrywa dowiązania
+### Zmiana w `~/.config` nie trafia do gita
 
-`sed -i` i edytory z „zapisem atomowym” zapisują plik tymczasowy i podmieniają nim oryginał. Dowiązanie staje się wtedy zwykłym plikiem: `~/.config/...` przestaje wskazywać na repo, a zmiana nie trafia do gita. Jeśli zmiana działa, ale `git status` jej nie widzi, sprawdź:
+`install.sh` kopiuje konfigurację, więc `~/.config/...` i repozytorium to osobne pliki. Zmiana w systemie działa, ale `git status` w klonie jej nie widzi. Żeby ją zachować, skopiuj plik do klonu i zrób commit:
 
 ```sh
-ls -l ~/.config/hypr/hyprland.lua     # ma być strzałka ->
+cp ~/.config/hypr/hyprland.lua ~/hyprland-dark-fantasy/config/hypr/
+cd ~/hyprland-dark-fantasy && git add -A && git commit -m "opis zmiany"
 ```
 
-Naprawa: skopiuj plik z powrotem do repozytorium i uruchom ponownie `./install.sh --apply`.
+W drugą stronę: zmiana w repo nic nie robi, dopóki nie uruchomisz `./install.sh --apply`. Lokalne zmiany, których nie przeniesiesz do repo, i tak przetrwają ponowną instalację: `install.sh` je zachowuje, chyba że ten sam plik zmienił się też w repo.
+
+`sed -i` i edytory z „zapisem atomowym” niczego już nie psują; problem dotyczył tylko dowiązań tworzonych przez starsze instalacje.
+
+### Pliki `.bak` obok konfiguracji
+
+Plik w rodzaju `hyprland.lua.bak-20260912-143005` to wersja, którą `install.sh --apply` odłożył na bok, bo nie mógł jej zachować: od ostatniej instalacji zmieniła się i Twoja kopia, i plik w repo, albo nie było jeszcze zapisu (pierwsza instalacja na istniejącą konfigurację). Na miejscu jest teraz wersja z repo. Porównaj oba pliki, przenieś, co chcesz zachować, i usuń kopię:
+
+```sh
+diff ~/.config/hypr/hyprland.lua.bak-20260912-143005 ~/.config/hypr/hyprland.lua
+```
+
+Żeby zobaczyć, co instalator zrobi, zanim to zrobi, uruchom `./install.sh` bez `--apply`.
 
 ## Hyprland z konfiguracją w Lua
 
@@ -92,7 +105,7 @@ mako, swaync, portal Plasmy i powłoka Quickshell zgłaszają `org.freedesktop.N
 
 Nazwę może trzymać tylko jeden proces, więc **SwayNC nie może startować razem z powłoką**. Gdyby zdążył pierwszy, powłoka nie zobaczyłaby ani jednego powiadomienia. Dlatego nie ma go w autostarcie.
 
-**Powrót do SwayNC.** Pakiet jest nadal zainstalowany, a jego konfiguracja dowiązana. Przywróć `run_once("swaync")` w autostarcie w `config/hypr/hyprland.lua` i zmień `Exec` w pliku `.service` z powrotem na `/usr/bin/swaync`.
+**Powrót do SwayNC.** Pakiet jest nadal zainstalowany, a jego konfiguracja nadal jest kopiowana. Przywróć `run_once("swaync")` w autostarcie w `config/hypr/hyprland.lua` i zmień `Exec` w pliku `.service` z powrotem na `/usr/bin/swaync`.
 
 **Który proces trzyma nazwę:**
 

@@ -12,7 +12,7 @@ Each item below was found while building this configuration. Most of them fail s
 
 **The charge-limit rows are missing.** The battery has no `charge_control_*` files in sysfs, so the option is not available on this hardware.
 
-**`git status` shows `hyprpaper.conf` and `hyprlock.conf` as modified.** You picked a wallpaper in the Cogwheel, which rewrites the path in both files. See [installation.md](installation.md#what-is-not-linked).
+**The wallpaper went back to the default after `./install.sh --apply`.** The wallpaper you pick in the Cogwheel is saved in `hyprpaper.conf` and `hyprlock.conf` as a local change. The installer keeps it unless the repo's version of those files changed; then your version is in a `.bak-*` file next to it. Pick the wallpaper again in the Cogwheel. See [installation.md](installation.md#what-installsh-does-not-cover).
 
 **A setting from the Cogwheel broke Hyprland.** Hyprland shows a notification pointing to `ustawienia.lua`. Use Cogwheel → Hyprland → Restore defaults, or delete `~/.config/hypr/ustawienia.lua` and run `hyprctl reload`.
 
@@ -26,17 +26,30 @@ Each item below was found while building this configuration. Most of them fail s
 hyprctl dispatch '(function() __autostart(); return hl.dsp.no_op() end)()'
 ```
 
-## Symlinks
+## Copied configuration
 
-### `sed -i` breaks the symlinks
+### A change in `~/.config` is not in git
 
-`sed -i`, and editors that save "atomically", write a temporary file and rename it over the original. That replaces the symlink with a regular file: `~/.config/...` no longer points into the repo, and your change never reaches git. If a change works but `git status` does not see it, check:
+`install.sh` copies the configuration, so `~/.config/...` and the repository are separate files. An edit on the system works, but `git status` in a clone does not see it. To keep it, copy the file into a clone and commit:
 
 ```sh
-ls -l ~/.config/hypr/hyprland.lua     # there should be an arrow ->
+cp ~/.config/hypr/hyprland.lua ~/hyprland-dark-fantasy/config/hypr/
+cd ~/hyprland-dark-fantasy && git add -A && git commit -m "describe the change"
 ```
 
-Fix: copy the file back into the repository and run `./install.sh --apply` again.
+The other way round, an edit in the repo does nothing until you run `./install.sh --apply`. Local changes you do not copy back still survive a reinstall: `install.sh` keeps them, unless the same file changed in the repo too.
+
+`sed -i` and editors that save "atomically" no longer break anything; that only affected the symlinks created by older installs.
+
+### `.bak` files next to the config
+
+A file like `hyprland.lua.bak-20260912-143005` is a version that `install.sh --apply` moved aside because it could not keep it: since the last install both your copy and the repo file changed, or there was no record yet (a first install over an existing config). The repo version is now in place. Compare the two, carry over what you still want, then delete the backup:
+
+```sh
+diff ~/.config/hypr/hyprland.lua.bak-20260912-143005 ~/.config/hypr/hyprland.lua
+```
+
+To see what the installer is going to do before it does it, run `./install.sh` without `--apply`.
 
 ## Hyprland with a Lua config
 
@@ -92,7 +105,7 @@ mako, swaync, the Plasma portal and the Quickshell shell all register `org.freed
 
 Only one process can own the name, so **SwayNC must not start alongside the shell**. If it got there first, the shell would not see a single notification. That is why it is not in the autostart.
 
-**Going back to SwayNC.** The package is still installed and its config is linked. Restore `run_once("swaync")` in the autostart in `config/hypr/hyprland.lua`, and change `Exec` in the `.service` file back to `/usr/bin/swaync`.
+**Going back to SwayNC.** The package is still installed and its config is still copied. Restore `run_once("swaync")` in the autostart in `config/hypr/hyprland.lua`, and change `Exec` in the `.service` file back to `/usr/bin/swaync`.
 
 **Which process owns the name:**
 

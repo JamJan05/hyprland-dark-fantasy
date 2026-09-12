@@ -13,9 +13,9 @@
    feed those modules, so they went away together with Breeze.
 
    KDE WARNING: kde-gtk-config writes its own gtk.css when the theme is
-   changed in Plasma System Settings. After such a change in a Plasma
-   session this file stops being a link to the repository - then
-   ./install.sh --apply links it back.
+   changed in Plasma System Settings. install.sh treats that as a local
+   change and keeps it - to get this palette back, delete
+   ~/.config/gtk-3.0/gtk.css and run ./install.sh --apply.
 
    Palette from the README:
      background #0b0b0c   surface #151311   surface alt. #201c18

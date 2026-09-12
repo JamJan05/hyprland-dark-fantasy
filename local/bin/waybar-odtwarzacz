@@ -36,7 +36,7 @@
 
 KROK=3
 
-# df-jezyk lives next to it (both scripts are symlinked into ~/.local/bin).
+# df-jezyk lives next to it (install.sh copies both scripts into ~/.local/bin).
 jezyk() {
     local obok=${BASH_SOURCE[0]%/*}/df-jezyk
     if [[ -x $obok ]]; then "$obok"

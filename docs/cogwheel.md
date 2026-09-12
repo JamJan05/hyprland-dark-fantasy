@@ -65,7 +65,7 @@ The arrows only select a candidate and show its preview. **Set as wallpaper** th
 1. rewrites `path` in `~/.config/hypr/hyprpaper.conf` and `$tapeta` in `~/.config/hypr/hyprlock.conf`,
 2. restarts this session's hyprpaper.
 
-Both files are symlinks into the repository, so the change appears in `git status`. The default wallpaper is `~/.local/share/dark-fantasy/wallpaper.png`, a link to `assets/wallpaper.png`. **Restore defaults** does not touch the wallpaper.
+Both files are copies installed by `install.sh`, so this is a local change: it does not appear in `git status`, and reinstalling keeps it unless the repo's version of those files changed (then your version goes to a `.bak-*` backup). The default wallpaper is `~/.local/share/dark-fantasy/wallpaper.png`, a copy of `assets/wallpaper.png`. **Restore defaults** does not touch the wallpaper.
 
 ## How settings are saved
 

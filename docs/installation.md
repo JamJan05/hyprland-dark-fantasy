@@ -6,7 +6,7 @@ Three scripts install this desktop. Each one **shows a plan and changes nothing*
 
 | Script | What it does | Needs root |
 |---|---|---|
-| [`install.sh`](../install.sh) | Symlinks `config/` and friends into `~/.config` and `~/.local` | no |
+| [`install.sh`](../install.sh) | Copies `config/` and friends into `~/.config` and `~/.local` | no |
 | [`bootstrap.sh`](../bootstrap.sh) | From-scratch Gentoo setup: overlays, Portage files, packages, clone, `install.sh --apply`, udev rule | through `sudo` |
 | [`sddm/install-theme.sh`](../sddm/install-theme.sh) | Installs the SDDM login theme and makes it the default | through `sudo` |
 
@@ -37,7 +37,7 @@ What `--apply` does, in order:
 7. Runs `install.sh --apply`.
 8. Installs the battery udev rule, but only if the battery exposes charge thresholds.
 
-The script is idempotent: running it again skips whatever is already done. `./bootstrap.sh --help` prints the same summary.
+The script is idempotent: running it again skips whatever is already done. `./bootstrap.sh --help` prints the same summary. The installed desktop does not need the clone in `~/hyprland-dark-fantasy`; you can delete it afterwards.
 
 If `sudo` cannot ask for a password because there is no terminal, download the script and run it directly:
 
@@ -88,7 +88,7 @@ Notes on the list:
 - **Without a package**, the matching element falls back to a default look or shows an "unavailable" state; the desktop still starts.
 - **SDDM** and **fish** are not on the list. The SDDM theme and `config/fish/config.fish` are optional.
 
-Then link the configuration:
+Then install the configuration:
 
 ```sh
 git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
@@ -97,9 +97,9 @@ cd ~/hyprland-dark-fantasy
 ./install.sh --apply
 ```
 
-## What `install.sh` links
+## What `install.sh` copies
 
-Every entry is a **symbolic link** into the repository. If a real file already exists at the target, it is moved to `<file>.bak-YYYYMMDD-HHMMSS` first, and a link that already points to the right place is left alone.
+Every entry is **copied** from the repository; no symlinks are created. After `--apply` the repository folder can be deleted. To change something later, clone it again, edit, run `./install.sh --apply` and delete the folder again.
 
 | Area | Source in the repo | Target |
 |---|---|---|
@@ -119,12 +119,24 @@ Every entry is a **symbolic link** into the repository. If a real file already e
 
 `~/.local/share` above means `$XDG_DATA_HOME` when that variable is set.
 
+The installer records a SHA-256 checksum of every file it installs in `~/.local/state/dark-fantasy/instalacja.sha256`. On each run it compares, for every file, the repo version, the system version and the checksum from the last install, and does one of these:
+
+| Situation | What happens |
+|---|---|
+| The system file is identical to the repo | nothing |
+| The system file is missing | the repo version is copied |
+| The system file is unchanged since the last install | it is overwritten with the repo version (an update) |
+| You changed the system file, and the repo file is unchanged since the last install | your local change is **kept** |
+| Both changed, or there is no record yet (first install) | the system file is moved to `<file>.bak-YYYYMMDD-HHMMSS`, then the repo version is copied |
+
+Symlinks left by older versions of the installer are replaced by copies automatically. Directories (Quickshell and the tile icons) are copied file by file. A file that disappeared from the repo is deleted from the system copy if you have not modified it; otherwise it is kept and the installer prints a warning.
+
 It also does two more things:
 
 - **Tile icons.** With `--apply` it runs `tools/skaluj-ikony-menu.py`, which needs `python3` with Pillow, to make 256 px copies of the originals in `assets/ikony-menu/`. If an original is missing, that tile shows a dark square with its name, and the installer prints a warning.
 - **Wallpaper folder.** Cogwheel lists images from `<XDG Pictures>/Wallpapers`, or from an existing `<XDG Pictures>/Tapety`. If that folder has no images, `--apply` copies `assets/wallpaper.png` into it, so the list is not empty on a fresh install.
 
-`kde-gtk-config`, the Plasma GTK settings module, can replace the `gtk.css` link with a regular file when you change the theme in Plasma. Run `./install.sh --apply` again to move that file to a backup and restore the link.
+`kde-gtk-config`, the Plasma GTK settings module, can overwrite `gtk.css` when you change the theme in Plasma. For `install.sh` that is just a local change, so it keeps it unless the repo's `gtk.css` changed too. To force the repo palette back, delete `~/.config/gtk-3.0/gtk.css` and `~/.config/gtk-4.0/gtk.css`, then run `./install.sh --apply`.
 
 ## After installation
 
@@ -192,14 +204,18 @@ sudo udevadm trigger --subsystem-match=power_supply --action=change
 
 ### The repository is the backup
 
-After `install.sh --apply` the files in `~/.config` are symlinks into the repository. There are no two copies, just one file with two paths. Whether you edit in the repo or in `~/.config`, `git status` sees the change, so a backup is just a commit:
+After `install.sh --apply` the files in `~/.config` are copies, not links. Editing them does not show up in `git status`, and editing the repo does not change the desktop until you run `./install.sh --apply`. The repository is still the backup, but a change made on the system has to be carried back into it by hand:
 
 ```sh
+git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
+cp ~/.config/hypr/hyprland.lua ~/hyprland-dark-fantasy/config/hypr/hyprland.lua
 cd ~/hyprland-dark-fantasy
 git add -A && git commit -m "describe the change" && git push
 ```
 
-### What is not linked
+It is simpler to edit in the clone in the first place, commit, and run `./install.sh --apply`.
+
+### What `install.sh` does not cover
 
 These live in system directories and need root. If you change them, copy them back into the repo yourself.
 
@@ -214,10 +230,10 @@ Some state is deliberately **outside** the repository, because it belongs to one
 - `~/.config/hypr/ustawienia.lua`: Hyprland settings from the Cogwheel (also listed in `.gitignore`),
 - `~/.local/state/dark-fantasy/powloka.json`: shell settings (language, HUD bars, charge limit).
 
-**Wallpaper changes are the exception.** Choosing a wallpaper in the Cogwheel rewrites `path` in `hyprpaper.conf` and `$tapeta` in `hyprlock.conf`. Both are symlinks into the repo, so the change shows up in `git status`. Commit it only if the image path also exists on your other machines.
+**The wallpaper is local too.** Choosing a wallpaper in the Cogwheel rewrites `path` in `~/.config/hypr/hyprpaper.conf` and `$tapeta` in `~/.config/hypr/hyprlock.conf`. Those are copies, so the change is local: it does not show up in `git status`, and `install.sh --apply` keeps it unless the repo's version of either file changed since the last install (then your version goes to a `.bak-*` backup and you pick the wallpaper again). Copy these files into the repo only if the image path also exists on your other machines.
 
-> [!WARNING]
-> `sed -i` and editors that save "atomically" replace the symlink with a regular file. The change then works but never reaches the repo. See [troubleshooting.md](troubleshooting.md#sed--i-breaks-the-symlinks).
+> [!NOTE]
+> A `<file>.bak-YYYYMMDD-HHMMSS` next to a config file is a version that `install.sh` moved aside because both it and the repo file had changed (or it was the first install). Compare it with the new file, carry over what you need, then delete it. See [troubleshooting.md](troubleshooting.md#bak-files-next-to-the-config).
 
 ### Restoring after a system reinstall
 
@@ -227,7 +243,7 @@ On a fresh Gentoo with network access and `git`:
 git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
 cd ~/hyprland-dark-fantasy
 ./bootstrap.sh              # plan
-./bootstrap.sh --apply      # overlays, packages, links, udev rule
+./bootstrap.sh --apply      # overlays, packages, configuration, udev rule
 cd sddm && ./install-theme.sh --apply && cd ..            # optional
 sudo rc-service bluetooth start && sudo rc-update add bluetooth default
 ```

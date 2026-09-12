@@ -27,23 +27,23 @@ Kompletny pulpit Hyprlanda dla Gentoo Linux, który przypomina menu Dark Souls 3
 - **Powiadomienia, OSD i panel odtwarzacza obsługuje Quickshell**, bez osobnego demona.
 - **Jeden wygląd wszędzie**: hyprlock, motyw logowania SDDM, GTK 3/4, kitty, yazi, btop i picker schowka w rofi.
 - **Angielski albo polski**, przełączany natychmiast.
-- **Instalatory, które najpierw pokazują plan**: instalator dowiązań z kopiami zapasowymi i instalacja Gentoo od zera.
+- **Instalatory, które najpierw pokazują plan**: instalator kopiujący, który zachowuje Twoje lokalne zmiany, a resztę odkłada do kopii zapasowych, i instalacja Gentoo od zera.
 
 Design jest autorski. Repozytorium nie zawiera żadnych assetów, grafik, krojów ani tekstów z Dark Souls ani z innej gry.
 
 ## Szybki start
 
-Te polecenia dowiązują konfigurację. Pakiety muszą być już zainstalowane (patrz [Wymagania](#wymagania)).
+Te polecenia instalują konfigurację. Pakiety muszą być już zainstalowane (patrz [Wymagania](#wymagania)).
 
 ```sh
 git clone https://github.com/JamJan05/Hyprland-Dark-Fantasy.git ~/hyprland-dark-fantasy
 cd ~/hyprland-dark-fantasy
-./install.sh            # próba na sucho: wypisuje, co dowiąże, niczego nie zmienia
-./install.sh --apply    # dowiązuje config/ do ~/.config, stare pliki odkłada do kopii
+./install.sh            # próba na sucho: wypisuje, co skopiuje, niczego nie zmienia
+./install.sh --apply    # kopiuje config/ do ~/.config, zmienione pliki odkłada do kopii
 hyprctl reload          # albo wyloguj się i uruchom sesję Hyprlanda
 ```
 
-Po `--apply` pliki w `~/.config` są dowiązaniami do repozytorium, więc każda zmiana w repo działa od razu. Na koniec instalator wypisuje kroki, które wymagają roota: pliki Portage, motyw SDDM i regułę udev.
+Po `--apply` pliki w `~/.config` są kopiami, więc katalog z repozytorium można usunąć. Żeby coś później zmienić, sklonuj repo ponownie, wprowadź zmianę, uruchom `./install.sh --apply` i znowu usuń katalog. Twoje lokalne zmiany w `~/.config` przetrwają ponowną instalację, chyba że ten sam plik zmienił się w repo; patrz [installation.md](docs/pl/installation.md#co-kopiuje-installsh). Na koniec instalator wypisuje kroki, które wymagają roota: pliki Portage, motyw SDDM i regułę udev.
 
 > [!NOTE]
 > Domyślny układ klawiatury to `pl`. Zmienisz go w Zębatce → Hyprland → Wejście → Układ klawiatury albo w `kb_layout` w `config/hypr/hyprland.lua`.

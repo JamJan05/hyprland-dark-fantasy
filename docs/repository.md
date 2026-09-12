@@ -3,7 +3,7 @@
 [← README](../README.md) · [Polski](pl/repository.md)
 
 ```
-config/              mirror of ~/.config; install.sh links it one to one
+config/              mirror of ~/.config; install.sh copies it one to one
   hypr/              compositor, floors, lock screen, idle, wallpaper
   waybar/            bar and its styles
   quickshell/        QtQuick shell: HUD, tile row, panels, OSD, notifications
@@ -20,7 +20,7 @@ gentoo/              keywords and USE flags for Portage
 udev/                rule: battery charge thresholds writable by wheel
 sddm/                login theme (QML) and its installer
 tools/               icon scaling, textures and glyph generators for the shell
-install.sh           links config/ into ~/.config
+install.sh           copies config/ into ~/.config
 bootstrap.sh         from-scratch install: overlays, packages, configuration
 docs/                documentation (docs/pl/ in Polish)
 ```
@@ -54,7 +54,7 @@ Many file and identifier names in the code are Polish (`kafle` = tiles, `Zebatka
 
 ## Helper scripts (`local/bin/`)
 
-`install.sh` links them into `~/.local/bin/`.
+`install.sh` copies them into `~/.local/bin/`.
 
 | Script | Called by | What it does |
 |---|---|---|

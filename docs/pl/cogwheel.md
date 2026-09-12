@@ -67,7 +67,7 @@ Strzałki tylko wybierają kandydata i pokazują jego podgląd. Dopiero **Ustaw 
 1. przepisuje `path` w `~/.config/hypr/hyprpaper.conf` i `$tapeta` w `~/.config/hypr/hyprlock.conf`,
 2. restartuje hyprpaper tej sesji.
 
-Oba pliki są dowiązaniami do repozytorium, więc zmiana pojawia się w `git status`. Domyślna tapeta to `~/.local/share/dark-fantasy/wallpaper.png`, dowiązanie do `assets/wallpaper.png`. **Przywróć domyślne** nie rusza tapety.
+Oba pliki są kopiami zainstalowanymi przez `install.sh`, więc to lokalna zmiana: nie pojawia się w `git status`, a ponowna instalacja ją zachowuje, chyba że w repo zmieniła się wersja tych plików (wtedy Twoja wersja trafia do kopii `.bak-*`). Domyślna tapeta to `~/.local/share/dark-fantasy/wallpaper.png`, kopia `assets/wallpaper.png`. **Przywróć domyślne** nie rusza tapety.
 
 ## Jak zapisują się ustawienia
 

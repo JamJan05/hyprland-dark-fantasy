@@ -370,11 +370,11 @@ Singleton {
         }
     }
 
-    // In the session, hyprpaper.conf and hyprlock.conf are SYMLINKS into the repository.
-    // An atomic write (temporary file + rename) would turn the symlink into a regular
-    // file and the change would not reach the repo - exactly what the README
-    // warns about at "sed -i". Hence atomicWrites: false - writing through the
-    // symlink, to the file in the repo.
+    // hyprpaper.conf and hyprlock.conf are regular files copied in by install.sh, so an
+    // atomic write (temporary file + rename) would work too. atomicWrites: false stays
+    // anyway: it is harmless for a regular file, and it is still correct if someone
+    // links these files into a repository by hand - an atomic write would replace the
+    // symlink with a regular file and the change would silently stop reaching the repo.
     FileView {
         id: plikHyprpaper
         path: root.sciezkaHyprpaper
